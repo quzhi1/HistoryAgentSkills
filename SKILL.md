@@ -165,15 +165,24 @@ mdict -q "关键词2" dict/历史辞典4合1.mdx
 
 用于获取带上下文的古籍原文片段（PreviousText / MatchedText / LaterText），补充人物、事件的具体细节：
 
+**关键词使用规范**：
+- ✅ **推荐**：简短精准的关键词（2-6 字）
+  - 单个人名：`"崔浩"` `"刘知远"`
+  - 事件短语：`"暴扬国恶"` `"国史 刊石"` `"刘知远 称帝"`
+  - 时间+人物：`"开运四年"` `"刘知远 太原"`
+- ❌ **避免**：过长的多词堆砌（超过 8 字）
+  - ❌ `"刘知远 河东 群臣劝进"`（太长，可能返回 404）
+  - ❌ `"崔浩 国史 暴扬国恶 太平真君"`（关键词过多）
+
 ```bash
 # 检索包含关键词的古籍原文片段（返回命中句及前后文）
 cd /Users/zhi.q/HistoryAgentSkills
-python cnkgraph/scripts/query_api.py find --keyword "人名或事件关键词"
+python cnkgraph/scripts/query_api.py find --keyword "崔浩"
 python cnkgraph/scripts/query_api.py find --keyword "暴扬国恶"
-python cnkgraph/scripts/query_api.py find --keyword "国史 刊石"
+python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 ```
 
-- **多组关键词**：对人名、事件名、关键短语（如「暴扬国恶」「国史 刊石」）分别或组合检索，可交叉验证、补充起因经过结果。
+- **多次查询策略**：对人名、事件名、关键短语**分别**进行多次查询（而非堆在一个关键词中），可交叉验证、补充起因经过结果。每次查询使用简短关键词（2-6 字），避免超过 8 字的复杂组合。
 - **解析 Result**：返回的 `Result[].Books[].Volumes[].Pages[]` 含 `PreviousText`、`MatchedText`、`LaterText`，即命中处的前后文与匹配句；`Book`、`Volume` 为出处（书名、卷）。
 - **引用时**：必须标明**书名+章节名**（如《钦定古今图书集成》某汇编某典 卷X；若片段中引《通鉴》《魏书》等，一并写出）。
 

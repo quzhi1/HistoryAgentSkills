@@ -96,10 +96,9 @@ A: 尝试简化关键词、使用同义词，或查询相关的更大类别。
 
 ## 技术细节
 
-### MDX/MDD格式
+### MDX格式
 
 - MDX: 辞典索引和文本内容
-- MDD: 辞典资源文件（图片、样式等）
 - 格式说明: https://github.com/zhansliu/writemdict
 
 ### mdict-utils工具

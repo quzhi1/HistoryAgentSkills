@@ -59,10 +59,25 @@ curl -X POST "https://open.cnkgraph.com/api/Book/Search" \
 请求体为 **BookModel**（JSON 对象）：`Key`（关键词，必填）、`PageNo`（页码，0 起）、可选 `BookIds`。  
 返回 **Result**：带上下文的命中片段，每项含 **PreviousText**（前文）、**MatchedText**（命中词）、**LaterText**（后文），以及 **Book**、**Volume**（出处：书名、卷）。用于补充**时间、地点、相关人物、起因、经过、结果**。
 
+**关键词使用规范**：
+- ✅ **推荐**：简短精准的关键词（2-6 字）
+  - 单个人名：`"崔浩"` `"刘知远"`
+  - 事件短语：`"暴扬国恶"` `"国史 刊石"` `"刘知远 称帝"`
+  - 时间+人物：`"开运四年"` `"刘知远 太原"`
+- ❌ **避免**：过长的多词堆砌（超过 8 字）
+  - ❌ `"刘知远 河东 群臣劝进"`（太长，可能返回 404）
+  - ❌ `"崔浩 国史 暴扬国恶 太平真君"`（关键词过多）
+- 📌 **多维度查询**：分别使用不同关键词查询，而非堆在一起
+  - 如需了解"刘知远称帝"的细节，应分别查询：
+    - `"刘知远 称帝"` → 称帝事件
+    - `"刘知远 太原"` → 地点相关
+    - `"开运四年"` → 时间背景
+
 ```bash
-# 脚本
+# 脚本示例
 python cnkgraph/scripts/query_api.py find --keyword "崔浩"
 python cnkgraph/scripts/query_api.py find --keyword "暴扬国恶"
+python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 ```
 
 ```bash
@@ -93,7 +108,7 @@ curl "https://open.cnkgraph.com/api/People/苏轼"
 1. **古籍原文片段**：使用 **POST /api/Book/Find**（脚本命令：`python cnkgraph/scripts/query_api.py find --keyword "关键词"`）。
    - 请求体：`{"Key": "关键词", "PageNo": 0}`，可选 `BookIds` 限定书籍。
    - 返回：`Result[].Books[].Volumes[].Pages[]` 中每项含 **PreviousText**（前文）、**MatchedText**（命中词）、**LaterText**（后文），即带上下文的原文片段；`Book`、`Volume` 为出处（书名、卷）。
-   - 多组关键词：对人名、事件名、关键短语（如「暴扬国恶」「国史 刊石」）分别或组合检索，可交叉验证并补充起因、经过、结果。
+   - **多次查询策略**：对人名、事件名、关键短语（如「暴扬国恶」「国史 刊石」）**分别**进行多次查询（而非堆在一个关键词中），可交叉验证并补充起因、经过、结果。每次查询使用简短关键词（2-6 字），避免超过 8 字的复杂组合。
 
 2. **引用要求**：凡引用古籍片段，**必须**标明**书名与章节名**（如《钦定古今图书集成》某汇编某典 卷X；若片段内引《通鉴》《魏书》等，一并写出）。
 
