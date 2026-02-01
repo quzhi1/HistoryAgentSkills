@@ -1,0 +1,2 @@
+*.mdx filter=lfs diff=lfs merge=lfs -text
+*.mdd filter=lfs diff=lfs merge=lfs -text
