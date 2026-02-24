@@ -32,7 +32,11 @@ def query_dictionary(keyword):
         if result.returncode == 0:
             output = result.stdout.strip()
             if output:
-                return output
+                # Remove "Elapsed time" line from mdict output
+                lines = output.split('\n')
+                filtered_lines = [line for line in lines if not line.startswith('--- Elapsed time')]
+                filtered_output = '\n'.join(filtered_lines).strip()
+                return filtered_output if filtered_output else None
             else:
                 return None
         else:
@@ -54,12 +58,12 @@ def format_result(keyword, result):
     print(f"\n{'='*60}")
     print(f"关键词：{keyword}")
     print(f"{'='*60}")
-    
+
     if result:
         print(f"\n根据《中国历史大辞典》：")
         print(f"\n「{result}」")
     else:
-        print(f"\n未找到词条"{keyword}"")
+        print(f"\n未找到词条「{keyword}」")
         print("\n建议：")
         print("  1. 尝试简化关键词")
         print("  2. 使用同义词或别称")
