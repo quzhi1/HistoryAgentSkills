@@ -1,313 +1,178 @@
-# 中国历史专家系统
+# 史料检索.skill
 
-一个基于权威历史辞典和古籍文献API的中国历史问答系统，通过查询《中国历史大辞典》和古籍文献知识图谱，提供准确、有据可查的历史解答。
+一个跑在 Claude Code 上的中国历史问答 skill。基于《中国历史大辞典》和 [cnkgraph](https://cnkgraph.com) 古籍知识图谱 API，回答问题时**必查两边、必引出处（书名 + 章节名）、查不到就说查不到、绝不编造**。
 
-## 🎯 系统特点
+适用范围：先秦至清末的人物、事件、制度、文学作品、文化常识。
 
-- ✅ **权威可靠**: 基于《中国历史大辞典4合1》权威工具书
-- ✅ **史料支撑**: 标注原始史料出处（二十四史等正史），**所有史料一律给出处，且须包含书名与章节名**
-- ✅ **有据可查**: 所有信息都标注出处（书名+章节名），便于查证
-- ✅ **综合查询**: 结合辞典定义和原始史料
-- ⭐ **绝不编造**: 查不到就诚实说"查不到"，绝不基于常识推测
+---
 
-## 📚 数据资源
+## 数据资源
 
-### 1. 中国历史大辞典
+| 资源 | 形式 | 用途 |
+|------|------|------|
+| 《中国历史大辞典4合1》 | 本地 MDX 文件（约 4GB） | 权威定义、史料出处线索 |
+| cnkgraph 古籍 API | HTTP 接口 [open.cnkgraph.com](https://open.cnkgraph.com/swagger) | 古籍原文片段、诗词、人物、书目 |
 
-位置: `dict/` 文件夹
-- 权威的历史工具书
-- 包含人物、事件、制度、地理等详尽解释
-- 提供准确的历史定义和背景信息
+辞典文件需自行获取放到 `dict/历史辞典4合1.mdx`。cnkgraph API 仅限非商业用途。
 
-### 2. 古籍文献知识图谱API
+---
 
-来源: [cnkgraph.com](https://cnkgraph.com)
-- 诗文库: 约485M，包含历代诗词文章
-- 古籍库: 约2GB，包含大量古籍文献
-- 人物库: 历史人物信息和关系
-- 事件库: 历史事件记录
+## 安装
 
-## 🚀 快速开始
-
-### 方式1: 使用自动设置脚本（最简单）⭐
+### 一、搭项目环境（必做）
 
 ```bash
 cd /Users/zhi.q/HistoryAgentSkills
 ./setup_venv.sh
 ```
 
-这个脚本会自动：
-- 创建虚拟环境
-- 激活虚拟环境  
-- 安装所有依赖
-- 测试安装
+脚本会建 venv、装依赖（`mdict-utils` + `requests`）、跑一次自检。完成后 `venv/bin/mdict` 和 `venv/bin/python` 即可直接调用，**不需要** `source venv/bin/activate`。
 
-### 方式2: 手动设置（推荐）
-
-**推荐使用虚拟环境**：
+### 二、全局注册到 Claude Code（推荐）
 
 ```bash
-# 创建虚拟环境
-python3 -m venv venv
-
-# 激活虚拟环境（macOS/Linux）
-source venv/bin/activate
-
-# 安装依赖
-pip install -r requirements.txt
-
-# 验证安装
-mdict --version
+./install-global.sh
 ```
 
-### ⚠️ 重要：每次使用前激活虚拟环境
+脚本会在 `~/.claude/` 下放三样东西：
 
-```bash
-cd /Users/zhi.q/HistoryAgentSkills
-source venv/bin/activate
-```
+- `skills/chinese-history-expert/SKILL.md` — 全局触发入口（stub，把 Claude 引导回项目）
+- `commands/history.md` → 项目内文件的 symlink
+- `agents/history-fact-checker.md` → 项目内文件的 symlink
 
-**常见错误**："未安装 mdict" → 请先激活虚拟环境！
+装完之后，**在任何目录启动 `claude`** 都能用本 skill。改规则只改项目内的文件，全局自动生效（symlink 单一真理源）。
 
-详见：
-- [虚拟环境使用指南](VENV_GUIDE.md)
-- [环境配置指南](ENVIRONMENT_SETUP.md) ⭐
-
-### 基本使用
-
-作为Cursor Agent Skill使用时，系统会自动调用这些工具。当你问历史问题时，Agent会：
-
-1. 查询《中国历史大辞典》获取权威定义
-2. 查询古籍文献API获取原始史料
-3. 综合两方面信息给出完整回答
-
-### 命令行工具
-
-也可以直接使用命令行工具查询：
-
-```bash
-# 综合查询（推荐）
-python scripts/history_query.py "李白"
-
-# 只查询辞典
-python dict/scripts/query_dict.py "安史之乱"
-
-# 只查询API
-python cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月
-```
-
-## 📖 使用示例
-
-### 示例1: 查询历史人物
-
-**问题**: "李白是哪个朝代的诗人？他有哪些代表作？"
-
-**系统操作流程**:
-1. 查询辞典获取李白基本信息
-2. 查询API获取李白的诗词作品
-3. 综合回答，引用辞典定义和诗词原文
-
-**回答格式**:
-```
-根据《中国历史大辞典》：
-「李白（701-762），字太白，号青莲居士...」
-
-唐·李白《静夜思》：
-「床前明月光，疑是地上霜。举头望明月，低头思故乡。」
-
-...（基于以上资料的分析）
-```
-
-### 示例2: 查询历史事件
-
-**问题**: "安史之乱是怎么回事？"
-
-**系统操作流程**:
-1. 查询辞典了解事件全貌
-2. 查询API查找相关古籍记载
-3. 结合辞典和史料给出完整解答
-
-### 示例3: 查询历史制度
-
-**问题**: "科举制度是什么时候开始的？"
-
-**系统操作流程**:
-1. 查询辞典获取科举制度定义
-2. 查询相关朝代和历史背景
-3. 综合分析制度起源和发展
-
-## 🏗️ 项目结构
-
-```
-HistoryAgentSkills/
-├── README.md                      # 本文件
-├── SKILL.md                       # 主技能：历史专家系统
-├── dict/                          # 历史辞典相关
-│   ├── SKILL.md                   # 辞典查询技能
-│   ├── 历史辞典4合1.mdx           # 辞典数据文件
-│   ├── 历史辞典4in1.mdd           # 辞典资源文件
-│   └── scripts/
-│       └── query_dict.py          # 辞典查询脚本
-├── cnkgraph/                      # 古籍API相关
-│   ├── SKILL.md                   # API查询技能
-│   └── scripts/
-│       └── query_api.py           # API查询脚本
-└── scripts/
-    └── history_query.py           # 综合查询脚本
-```
-
-## 💡 核心原则
-
-### 1. 有据可查
-所有历史信息必须基于查询结果，不能凭空推测。
-
-### 2. 双重验证
-- 历史辞典: 提供专业定义和准确信息
-- 古籍原文: 提供史料证据和文献支撑
-
-### 3. 严格引用
-- 必须标注信息来源
-- 必须引用原文
-- 必须区分辞典解释和古籍原文
-
-### 4. 诚实原则
-如果查询后仍然无法回答，明确告知用户现有资料不足，不要勉强给出不确定的答案。
-
-## 🎓 适用范围
-
-### 适合回答
-
-- ✅ 中国古代历史（先秦至清末）
-- ✅ 历史人物、事件、制度
-- ✅ 古代文学作品
-- ✅ 历史文化常识
-
-### 不适合回答
-
-- ❌ 现当代历史（资源限制）
-- ❌ 纯学术争议问题
-- ❌ 需要考古证据的问题
-- ❌ 历史假设类问题
-
-## 🔧 技术说明
-
-### 辞典格式
-- MDX/MDD格式
-- 使用 mdict-utils 工具查询
-- 不需要读取整个文件，支持精确查询
-
-### API接口
-- 基础URL: https://open.cnkgraph.com
-- 返回格式: JSON
-- 使用限制: 仅限非商业用途
-
-### 依赖包
-```bash
-pip install mdict-utils  # 辞典查询
-pip install requests     # API调用
-```
-
-## 📝 引用规范
-
-### 辞典引用
-```
-根据《中国历史大辞典》：
-
-「辞典原文内容」
-```
-
-### 古籍引用
-```
-据《史书名》（朝代·作者）记载：
-
-「古文原文」
-
-译文：现代汉语翻译
-```
-
-### 诗词引用
-```
-朝代·作者《诗名》：
-
-「诗词原文」
-
-解释说明...
-```
-
-## 🤝 使用建议
-
-1. **先查辞典**: 获取准确的基础认知（**不要仅查辞典**）
-2. **再用 cnkgraph 查细节**: 对人物、事件类问题，用 cnkgraph API（尤其是 **Book/Find** 原文片段检索）补充**具体时间、地点、相关人物、起因、经过、结果**；可多组关键词（人名、事件短语）检索
-3. **综合分析**: 基于辞典与古籍原文片段进行合理分析
-4. **明确出处**: 所有引用都要标注来源（书名+章节名）
-
-## ⚠️ 注意事项
-
-- 辞典文件较大（约4GB），不要尝试直接读取
-- API有网络访问要求，确保网络畅通
-- 查询关键词要准确，尝试多种表述
-- 遇到未找到的词条，尝试简化或使用同义词
-
-## 📚 参考资源
-
-- [古籍文献知识图谱网](https://cnkgraph.com)
-- [开放API文档](https://open.cnkgraph.com/swagger)
-- [mdict-utils工具](https://pypi.org/project/mdict-utils/)
-
-## 📄 许可
-
-- 《中国历史大辞典》: 仅供个人学习研究使用
-- 古籍文献知识图谱API: 仅限非商业用途
-- 本项目代码: MIT License
+不想全局注册也行，跳过这一步，本 skill 仍可在项目目录内使用。
 
 ---
 
-**使用本系统时，记住**: 我们是历史的记录者和传播者，要对历史负责，对读者负责。每一个引用、每一个解释，都应该有据可查、经得起推敲。
+## 使用方式（在 Claude Code 里）
 
-## 📖 关于史料引用
+### 方式 1：直接问历史问题
 
-本系统强调引用原始史料（正史）的重要性：
-
-- ⭐ **优先级**：正史 > 其他史书 > 辞典
-- ⭐ **所有史料一律给出处**：出处必须包含**书名与章节名**（如《魏书》卷三五《崔浩传》），不得只写书名不写卷、传名
-- ⭐ **查证线索**：提供详细的卷章信息，便于进一步查证
-
-详见：
-- [正史引用指南](HISTORICAL_SOURCES_GUIDE.md) - 二十四史列表、引用规范
-- [改进示例](IMPROVED_EXAMPLE.md) - 如何正确标注史料出处
-
-**当前能力与限制**：
-- ✅ 通过辞典了解史料出处
-- ✅ 用 cnkgraph **Book/Find** 检索古籍原文片段（带上下文），补充时间、地点、人物、起因、经过、结果
-- ✅ 标注应查阅的正史名称和卷数；引用古籍片段须标书名+章节名
-- ✅ 诚实回答"查不到"
-- ⚠️ 暂时无法直接获取正史全文（可依赖类书、通鉴等引文片段）
-- ⚠️ 辞典未收录的内容需依赖 cnkgraph 或如实说明查不到
-- ⚠️ 不会基于"常识"编造内容
-
-**重要警示**：
-- ❌ 本系统**不会**编造内容
-- ❌ 本系统**不会**基于常识推测
-- ✅ 查不到资料时会**诚实说明**
-- ✅ 所有回答都是**实际查询结果**
-
-详见：[常见错误警示](COMMON_MISTAKES.md)
-
-## ⚠️ 常见问题
-
-### 问题："未安装 mdict"
-
-**错误信息**：
 ```
-当前环境未安装 mdict，无法直接查《中国历史大辞典》MDX。
+> 崔浩国史之狱是怎么回事？
+> 王安石变法的主要内容有哪些？
+> 李白《将进酒》的创作背景？
 ```
 
-**原因**：未激活虚拟环境
+Claude Code 识别为中国历史问题后会自动触发本 skill，按 `SKILL.md` 工作流答题：查辞典 → 查 cnkgraph 古籍片段 → 标书名+章节名 → 补全六类细节（时间、地点、相关人物、起因、经过、结果）。
 
-**解决**：
+### 方式 2：`/history` 斜杠命令
+
+```
+> /history 安史之乱
+> /history 苏轼
+```
+
+一键跑 `scripts/history_query.py` 综合查询脚本，再让 Claude 按规范整理输出。适合"我已经有明确关键词，想直接拿结果"的场景。
+
+### 方式 3：用 fact-checker 校验回答
+
+任何历史回答给出后，可以让独立的 subagent 复查每一条引用：
+
+```
+> 用 history-fact-checker 校验上面这段回答
+```
+
+它会重跑 mdict / cnkgraph 验证每条史料，输出**通过 / 有瑕疵 / 不通过**报告，列出哪条引用篡改了原文、哪条卷章对不上、哪句没引用就陈述了内容。**它不重写答案**——只挑错。
+
+### 方式 4：命令行直接调用
+
+不进 Claude Code，直接跑：
+
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-source venv/bin/activate
+# 综合查询
+venv/bin/python scripts/history_query.py "李白"
+
+# 仅查辞典
+venv/bin/mdict -q "安史之乱" dict/历史辞典4合1.mdx
+
+# 古籍原文片段（关键词 2–6 字，超 8 字常 404）
+venv/bin/python cnkgraph/scripts/query_api.py find --keyword "崔浩"
+
+# 诗词 / 人物 / 古籍书目
+venv/bin/python cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月
+venv/bin/python cnkgraph/scripts/query_api.py people --name 苏轼
+venv/bin/python cnkgraph/scripts/query_api.py book --keyword 崔浩
 ```
 
-详见：[环境配置指南](ENVIRONMENT_SETUP.md)
+---
+
+## 项目结构
+
+```
+HistoryAgentSkills/
+├── CLAUDE.md                       # Claude Code 进项目时必读的操作守则与红线
+├── SKILL.md                        # 主 skill：详细工作流程、回答模板、引用规范
+├── README.md                       # 本文件
+├── install-global.sh               # 一键全局注册到 ~/.claude/
+├── setup_venv.sh                   # 一键搭虚拟环境
+├── requirements.txt                # Python 依赖
+├── test_system.py                  # 系统自检
+│
+├── .claude/
+│   ├── commands/history.md         # /history 斜杠命令
+│   └── agents/history-fact-checker.md   # 史料校验 subagent
+│
+├── dict/                           # 辞典子 skill
+│   ├── SKILL.md
+│   ├── 历史辞典4合1.mdx            # （需自备，约 4GB）
+│   └── scripts/query_dict.py
+│
+├── cnkgraph/                       # cnkgraph API 子 skill
+│   ├── SKILL.md
+│   └── scripts/query_api.py
+│
+├── scripts/
+│   └── history_query.py            # 综合查询脚本（辞典 + API 一次跑两边）
+│
+├── HISTORICAL_SOURCES_GUIDE.md     # 二十四史引用指南
+├── COMMON_MISTAKES.md              # 历史踩坑记录（修改规则前必读）
+└── ENVIRONMENT_SETUP.md            # 环境配置详解
+```
+
+---
+
+## 核心原则
+
+1. **必查两边**：辞典 + cnkgraph，缺一不可。只查辞典作答 = 违规。
+2. **史料引用必须包含书名 + 章节名**：✅《魏书》卷三五《崔浩传》｜❌《魏书》记载｜❌ 据史书记载
+3. **必须补全六类细节**：时间、地点、相关人物、起因、经过、结果
+4. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
+
+详细的反例与正例见 [COMMON_MISTAKES.md](COMMON_MISTAKES.md)。
+
+---
+
+## 适用 / 不适用
+
+**适合回答**
+
+- 中国古代（先秦至清末）的人物、事件、制度
+- 古代文学作品的内容、背景
+- 历史文化常识
+
+**不适合回答**
+
+- 现当代历史（资源不收录）
+- 纯学术争议问题
+- 需要考古证据的问题
+- 历史假设类问题
+
+---
+
+## 注意事项
+
+- ❌ 不要用 Read 工具直接读 `dict/历史辞典4合1.mdx`（约 4GB，会撑爆上下文），只能通过 `mdict -q` 查询
+- ❌ 不要在 Claude Code 触发的命令里用 `source venv/bin/activate`——会被权限系统拦截，每次按回车确认。改用 `venv/bin/python` / `venv/bin/mdict` 直调
+- ✅ 关键词控制 2–6 字，超过 8 字 cnkgraph 常 404；复杂问题用多次短查询交叉验证
+- ✅ 修改任何核心规则前，先看 [COMMON_MISTAKES.md](COMMON_MISTAKES.md) 历史踩坑
+
+---
+
+## License
+
+- 《中国历史大辞典》：仅供个人学习研究使用
+- cnkgraph API：仅限非商业用途
+- 本项目代码：MIT
