@@ -14,10 +14,16 @@ import sys
 import subprocess
 import requests
 import os
+from pathlib import Path
 from typing import Optional, Dict, Any, List
 
+from book_search import BookSearchError, search_books
+from dynasty_converter import EraConversionError, convert_era_expression
+
 # 配置
-DICT_PATH = "dict/历史辞典4合1.mdx"
+ROOT = Path(__file__).resolve().parents[1]
+DICT_PATH = ROOT / "dict" / "历史辞典4合1.mdx"
+MDICT_BIN = ROOT / "venv" / "bin" / "mdict"
 API_BASE_URL = "https://open.cnkgraph.com/api"
 TIMEOUT = 30
 
@@ -27,16 +33,38 @@ class HistoryExpert:
     def __init__(self):
         self.dict_path = DICT_PATH
         self.api_base = API_BASE_URL
+
+    def query_source_guidance(self, keyword: str, limit: int = 3) -> List[Dict[str, Any]]:
+        """Search local historiography EPUBs for source-collection direction."""
+        try:
+            return search_books(keyword, limit=limit)
+        except (BookSearchError, OSError) as e:
+            print(f"⚠️  EPUB史料方向检索出错: {e}")
+            return []
+
+    def query_era_conversion(self, expression: str) -> Optional[Dict[str, Any]]:
+        """Convert a reign-year expression if the keyword looks like one."""
+        if "年" not in expression and "载" not in expression:
+            return None
+        try:
+            result = convert_era_expression(expression)
+        except (EraConversionError, Exception) as e:
+            print(f"⚠️  年号换算出错: {e}")
+            return None
+        return result if result.get("matches") or result.get("errors") else None
         
     def query_dictionary(self, keyword: str) -> Optional[str]:
         """查询历史辞典"""
         if not os.path.exists(self.dict_path):
             print(f"⚠️  找不到辞典文件: {self.dict_path}")
             return None
+        if not MDICT_BIN.exists():
+            print(f"⚠️  找不到 mdict: {MDICT_BIN}，请运行 ./setup_venv.sh")
+            return None
         
         try:
             result = subprocess.run(
-                ["mdict", "-q", keyword, self.dict_path],
+                [str(MDICT_BIN), "-q", keyword, str(self.dict_path)],
                 capture_output=True,
                 text=True,
                 timeout=TIMEOUT
@@ -50,7 +78,7 @@ class HistoryExpert:
             print(f"⚠️  辞典查询超时: {keyword}")
             return None
         except FileNotFoundError:
-            print("⚠️  未安装 mdict-utils，请运行: pip install mdict-utils")
+            print("⚠️  未安装 mdict-utils，请运行: ./setup_venv.sh")
             return None
         except Exception as e:
             print(f"⚠️  辞典查询出错: {e}")
@@ -113,6 +141,29 @@ class HistoryExpert:
         print(f"中国历史专家系统 - 综合查询")
         print("="*70)
         print(f"\n🔍 查询关键词: {keyword}\n")
+
+        # 步骤0：年号换算（如果输入本身是年号纪年）
+        era_result = self.query_era_conversion(keyword)
+        if era_result:
+            print("🗓️  步骤0: 年号纪年换算...")
+            for item in era_result.get("matches", []):
+                reign = item.get("reignTitle") or item.get("dynasty")
+                print(f"✓ {item.get('dynasty')}{reign}{era_result['year_number']}年 = {item['gregorian_label']}")
+            for error in era_result.get("errors", []):
+                print(f"⚠️  {error}")
+            print(f"数据来源: {era_result['source_credit']}\n")
+
+        # 步骤0.5：从本地史料学 EPUB 判断搜集方向
+        print("🧭 步骤0.5: 检索本地史料学 EPUB，判断搜集方向...")
+        guidance_results = self.query_source_guidance(keyword, limit=3)
+        if guidance_results:
+            for i, item in enumerate(guidance_results, 1):
+                print(f"\n【方向{i}】{item['book_title']} / {item.get('section', '')}")
+                print(f"位置: {item['book_path']}#{item['href']}")
+                print(f"片段: {item['snippet']}")
+            print("\n注: EPUB 检索结果只用于判断史料搜集方向，最终史实仍需辞典与 cnkgraph 核验。\n")
+        else:
+            print("未在本地史料学 EPUB 中找到直接匹配片段。\n")
         
         # 步骤1：查询历史辞典
         print("📚 步骤1: 查询《中国历史大辞典》...")

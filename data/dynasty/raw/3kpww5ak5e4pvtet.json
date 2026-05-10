@@ -1,0 +1,58 @@
+{
+  "http://data.library.sh.cn/authority/temporal/3kpww5ak5e4pvtet": {
+    "http://www.library.sh.cn/ontology/reignTitle": [
+      {
+        "type": "literal",
+        "value": "应顺"
+      }
+    ],
+    "http://bibframe.org/vocab/label": [
+      {
+        "type": "literal",
+        "value": "荆南应顺"
+      }
+    ],
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "http://www.library.sh.cn/ontology/Temporal"
+      }
+    ],
+    "http://www.w3.org/2006/time#intervalDuring": [
+      {
+        "type": "uri",
+        "value": "http://data.library.sh.cn/authority/temporal/mcwzpg3bobv41ks9"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/beginYear": [
+      {
+        "type": "literal",
+        "value": "934",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/endYear": [
+      {
+        "type": "literal",
+        "value": "934",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/dynasty": [
+      {
+        "type": "literal",
+        "value": "南平"
+      },
+      {
+        "type": "literal",
+        "value": "荆南"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarchName": [
+      {
+        "type": "literal",
+        "value": "高从诲"
+      }
+    ]
+  }
+}

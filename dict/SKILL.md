@@ -15,17 +15,16 @@ description: 查询权威的中国历史大辞典，获取历史人物、事件�
 
 ### 0. 环境准备⚠️
 
-**重要**：查询前必须激活虚拟环境！
+**重要**：Codex 调用时直接使用 venv 二进制，不要 `source` 激活。
 
 ```bash
-# 激活虚拟环境
 cd /Users/zhi.q/HistoryAgentSkills
-source venv/bin/activate
+venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 ```
 
 **常见错误**："mdict: command not found"
-- **原因**：未激活虚拟环境
-- **解决**：运行上述命令激活环境
+- **原因**：没有使用 `venv/bin/mdict` 或虚拟环境未建好
+- **解决**：检查 `venv/bin/mdict`，不存在则运行 `./setup_venv.sh`
 
 详见：[环境配置指南](../ENVIRONMENT_SETUP.md)
 
@@ -34,22 +33,12 @@ source venv/bin/activate
 首次使用需要安装 mdict-utils：
 
 ```bash
-pip install mdict-utils
+./setup_venv.sh
 ```
 
 ### 2. 查询词条
 
-使用 mdict 命令查询（**需要在虚拟环境中**）：
-
-```bash
-# 确保已激活虚拟环境
-source venv/bin/activate
-
-# 查询
-mdict -q "关键词" dict/历史辞典4合1.mdx
-```
-
-或使用完整路径（不需要激活）：
+使用完整路径查询（不需要激活）：
 
 ```bash
 cd /Users/zhi.q/HistoryAgentSkills
@@ -90,9 +79,9 @@ venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 如果用户问题涉及多个概念，依次查询每个关键词：
 
 ```bash
-mdict -q "玄武门之变" dict/历史辞典4合1.mdx
-mdict -q "李世民" dict/历史辞典4合1.mdx
-mdict -q "李建成" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "玄武门之变" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "李世民" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "李建成" dict/历史辞典4合1.mdx
 ```
 
 ### 模糊查询
@@ -135,7 +124,7 @@ mdict -q "李建成" dict/历史辞典4合1.mdx
 
 **操作**：
 ```bash
-mdict -q "李白" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "李白" dict/历史辞典4合1.mdx
 ```
 
 **回答格式**：
@@ -153,7 +142,7 @@ mdict -q "李白" dict/历史辞典4合1.mdx
 
 **操作**：
 ```bash
-mdict -q "安史之乱" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "安史之乱" dict/历史辞典4合1.mdx
 ```
 
 **回答格式**：
@@ -171,9 +160,9 @@ mdict -q "安史之乱" dict/历史辞典4合1.mdx
 
 **操作**：
 ```bash
-mdict -q "科举制度" dict/历史辞典4合1.mdx
-mdict -q "科举" dict/历史辞典4合1.mdx
-mdict -q "隋朝" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "科举制度" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "科举" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "隋朝" dict/历史辞典4合1.mdx
 ```
 
 ## 与古籍知识图谱协同
@@ -187,7 +176,7 @@ mdict -q "隋朝" dict/历史辞典4合1.mdx
 ## 常见问题
 
 **Q: 辞典文件太大无法读取怎么办？**
-A: 不需要读取整个文件，使用 mdict -q 命令进行精确查询即可。
+A: 不需要读取整个文件，使用 `venv/bin/mdict -q` 命令进行精确查询即可。
 
 **Q: 查询速度慢怎么办？**
 A: 首次查询可能较慢，后续查询会快很多。可以一次查询多个关键词。

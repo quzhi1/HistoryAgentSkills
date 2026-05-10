@@ -1,0 +1,54 @@
+{
+  "http://data.library.sh.cn/authority/temporal/udow65h1sq7epude": {
+    "http://www.library.sh.cn/ontology/reignTitle": [
+      {
+        "type": "literal",
+        "value": "天册万岁"
+      }
+    ],
+    "http://bibframe.org/vocab/label": [
+      {
+        "type": "literal",
+        "value": "唐天册万岁"
+      }
+    ],
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "http://www.library.sh.cn/ontology/Temporal"
+      }
+    ],
+    "http://www.w3.org/2006/time#intervalDuring": [
+      {
+        "type": "uri",
+        "value": "http://data.library.sh.cn/authority/temporal/icdquglj1cgbekqk"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/beginYear": [
+      {
+        "type": "literal",
+        "value": "695",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/endYear": [
+      {
+        "type": "literal",
+        "value": "696",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/dynasty": [
+      {
+        "type": "literal",
+        "value": "唐"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarchName": [
+      {
+        "type": "literal",
+        "value": "武则天"
+      }
+    ]
+  }
+}

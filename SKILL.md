@@ -21,6 +21,16 @@ description: 回答中国历史问题的专家系统。查询权威历史辞典�
    - 提供诗词和文学作品
    - **注**：正史原文获取功能改进中
 
+3. **上海图书馆中国历史纪年表**（本地年号换算）
+   - 数据来自上海图书馆开放数据平台：中国历史纪年表
+   - 查询年号纪年并换算为公元纪年
+   - 同名年号默认列出全部匹配，由上下文判断
+
+4. **本地史料学 EPUB 检索**
+   - 检索 `books/` 下两本史料学入门书
+   - 仅用于判断搜集史料方向
+   - 最终史实仍必须由辞典和 cnkgraph 核验
+
 ## 使用原则
 
 ### 核心原则
@@ -75,6 +85,31 @@ description: 回答中国历史问题的专家系统。查询权威历史辞典�
 - 问题涉及什么时期？
 - 用户想了解什么方面？（背景、原因、影响等）
 - **需要查询哪些正史？**（如《史记》、《汉书》、《旧唐书》、《新唐书》等）
+- **是否出现年号纪年？**（如天宝十四载、太平真君十一年、康熙六十一年）
+
+### 步骤1.5：检索史料搜集方向与换算年号
+
+**EPUB 史料方向检索**：对核心人物、事件、制度关键词，先检索本地史料学 EPUB，用来判断应该优先找哪些史料类型或关键词。
+
+```bash
+cd /Users/zhi.q/HistoryAgentSkills
+venv/bin/python scripts/book_search.py "关键词" --limit 5
+```
+
+- 该结果只作为搜集方向，不可当作最终史实证据。
+- 最终回答仍必须查《中国历史大辞典》和 cnkgraph 古籍原文片段。
+
+**年号纪年换算**：凡用户问题、辞典结果、cnkgraph 片段或草稿答案中出现年号纪年，都要运行换算程序并在回答中标注公元纪年。
+
+```bash
+cd /Users/zhi.q/HistoryAgentSkills
+venv/bin/python scripts/dynasty_converter.py "天宝十四载"
+venv/bin/python scripts/dynasty_converter.py "唐 天宝三载"
+```
+
+- 数据来源必须注明：上海图书馆开放数据平台：中国历史纪年表。
+- 换算只精确到年份，不推断月份、日期或改元日。
+- 同名年号默认列出全部匹配；若上下文不能判定，必须说明存在歧义。
 
 ### 步骤2：查询历史辞典
 
@@ -85,12 +120,6 @@ description: 回答中国历史问题的专家系统。查询权威历史辞典�
 #### 环境检查
 
 ```bash
-# 方式1：在虚拟环境中查询（推荐）
-cd /Users/zhi.q/HistoryAgentSkills
-source venv/bin/activate
-mdict -q "关键词" dict/历史辞典4合1.mdx
-
-# 方式2：直接使用完整路径
 cd /Users/zhi.q/HistoryAgentSkills
 venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 ```
@@ -110,9 +139,9 @@ venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 3. 依赖未安装
 
 **解决方案**：
-1. 激活虚拟环境：`source venv/bin/activate`
-2. 或重新安装：`pip install mdict-utils`
-3. 或运行设置脚本：`./setup_venv.sh`
+1. 检查 `venv/bin/mdict` 是否存在
+2. 不存在则运行设置脚本：`./setup_venv.sh`
+3. 查询时统一使用 `venv/bin/mdict`，不要用 `source`
 
 **诚实回答**：
 由于技术问题，当前无法查询辞典。请用户稍后重试。
@@ -122,10 +151,9 @@ venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 
 使用 dict 技能查询：
 ```bash
-# 确保在虚拟环境中
-source venv/bin/activate
-mdict -q "关键词1" dict/历史辞典4合1.mdx
-mdict -q "关键词2" dict/历史辞典4合1.mdx
+cd /Users/zhi.q/HistoryAgentSkills
+venv/bin/mdict -q "关键词1" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "关键词2" dict/历史辞典4合1.mdx
 ```
 
 获取：
@@ -177,9 +205,9 @@ mdict -q "关键词2" dict/历史辞典4合1.mdx
 ```bash
 # 检索包含关键词的古籍原文片段（返回命中句及前后文）
 cd /Users/zhi.q/HistoryAgentSkills
-python cnkgraph/scripts/query_api.py find --keyword "崔浩"
-python cnkgraph/scripts/query_api.py find --keyword "暴扬国恶"
-python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
+venv/bin/python cnkgraph/scripts/query_api.py find --keyword "崔浩"
+venv/bin/python cnkgraph/scripts/query_api.py find --keyword "暴扬国恶"
+venv/bin/python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 ```
 
 - **多次查询策略**：对人名、事件名、关键短语**分别**进行多次查询（而非堆在一个关键词中），可交叉验证、补充起因经过结果。每次查询使用简短关键词（2-6 字），避免超过 8 字的复杂组合。
@@ -188,9 +216,9 @@ python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 
 **4.2 其他 cnkgraph 调用（视需要）**
 
-- **诗词/诗文**：`python cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月`（POST /api/Writing/Find）
-- **人物**：`python cnkgraph/scripts/query_api.py people --name 苏轼`（GET /api/People/{id}）
-- **古籍书目**：`python cnkgraph/scripts/query_api.py book --keyword 崔浩`（POST /api/Book/Search，可知哪些书含该词）
+- **诗词/诗文**：`venv/bin/python cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月`（POST /api/Writing/Find）
+- **人物**：`venv/bin/python cnkgraph/scripts/query_api.py people --name 苏轼`（GET /api/People/{id}）
+- **古籍书目**：`venv/bin/python cnkgraph/scripts/query_api.py book --keyword 崔浩`（POST /api/Book/Search，可知哪些书含该词）
 
 **4.3 要补充的六类信息**
 
@@ -205,7 +233,17 @@ python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 
 **禁止**：仅凭辞典作答而不做 cnkgraph 检索；引用古籍片段时不标书名、章节名。
 
-### 步骤5：综合回答
+### 步骤5：最终年号扫描
+
+综合回答前，再检查用户问题、查询材料和草稿答案里是否有年号纪年。凡出现年号纪年，必须用 `scripts/dynasty_converter.py` 换算并标注，例如：
+
+```markdown
+天宝十四载（公元755年）
+```
+
+如果同名年号有多个可能，按上下文选择；不能选择时写明“年号换算存在同名歧义”并列出候选。
+
+### 步骤6：综合回答
 
 结构化回答，包含：
 
@@ -215,9 +253,10 @@ python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 4. **史料内容**（引用辞典整理的内容，并标明原始出处：书名+章节名）
 5. **细节补充**（来自 cnkgraph Book/Find 等：**时间、地点、相关人物、起因、经过、结果**；每段引用须标出处）⭐
 6. **诗词/诗文补充**（如适用，来自古籍 API）
-7. **分析解释**（**仅基于查询到的事实**）
+7. **年号换算说明**（如出现年号纪年，标注公元纪年和上海图书馆开放数据平台来源）
+8. **分析解释**（**仅基于查询到的事实**）
 
-### 步骤6：查询失败处理⭐⭐⭐
+### 步骤7：查询失败处理⭐⭐⭐
 
 **如果查询不到相关资料**，必须按以下格式回答：
 
@@ -482,6 +521,8 @@ python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 
 - [ ] 是否查询了历史辞典？
 - [ ] 是否查询了古籍API？
+- [ ] 是否用 EPUB 检索判断过史料搜集方向（如适用）？
+- [ ] 是否把所有年号纪年换算为公元纪年？
 - [ ] 是否正确引用了原文？
 - [ ] **是否所有史料都标明了出处（书名+章节名）？**
 - [ ] 是否标注了所有引用来源？
@@ -498,16 +539,16 @@ python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 
 **1. 查历史辞典**
 ```bash
-mdict -q "李白" dict/历史辞典4合1.mdx
+venv/bin/mdict -q "李白" dict/历史辞典4合1.mdx
 ```
 
 **2. 查古籍API**
 ```bash
 # 查询李白的诗作
-curl "https://open.cnkgraph.com/api/Writing/Search?author=李白"
+venv/bin/python cnkgraph/scripts/query_api.py poetry --author 李白
 
 # 查询李白的人物信息
-curl "https://open.cnkgraph.com/api/People/Search?name=李白"
+venv/bin/python cnkgraph/scripts/query_api.py people --name 李白
 ```
 
 **3. 组织回答**
@@ -559,12 +600,12 @@ curl "https://open.cnkgraph.com/api/People/Search?name=李白"
 
 1. **mdict-utils**（查询辞典）
    ```bash
-   pip install mdict-utils
+   ./setup_venv.sh
    ```
 
 2. **requests**（调用API）
    ```bash
-   pip install requests
+   ./setup_venv.sh
    ```
 
 ### 可选工具

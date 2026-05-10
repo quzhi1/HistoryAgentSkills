@@ -1,0 +1,60 @@
+{
+  "http://data.library.sh.cn/authority/temporal/thmqd7pixsarpvud": {
+    "http://www.library.sh.cn/ontology/reignTitle": [
+      {
+        "type": "literal",
+        "value": "定武"
+      }
+    ],
+    "http://bibframe.org/vocab/label": [
+      {
+        "type": "literal",
+        "value": "南明定武"
+      }
+    ],
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "http://www.library.sh.cn/ontology/Temporal"
+      }
+    ],
+    "http://www.w3.org/2006/time#intervalDuring": [
+      {
+        "type": "uri",
+        "value": "http://data.library.sh.cn/authority/temporal/n13f9bi8595hz274"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/beginYear": [
+      {
+        "type": "literal",
+        "value": "1646",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/endYear": [
+      {
+        "type": "literal",
+        "value": "1663",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/dynasty": [
+      {
+        "type": "literal",
+        "value": "南明"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarchName": [
+      {
+        "type": "literal",
+        "value": "朱本鉝"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarch": [
+      {
+        "type": "literal",
+        "value": "韩王"
+      }
+    ]
+  }
+}

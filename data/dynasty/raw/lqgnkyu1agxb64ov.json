@@ -1,0 +1,54 @@
+{
+  "http://data.library.sh.cn/authority/temporal/lqgnkyu1agxb64ov": {
+    "http://bibframe.org/vocab/label": [
+      {
+        "type": "literal",
+        "value": "汉"
+      }
+    ],
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "http://www.library.sh.cn/ontology/Temporal"
+      }
+    ],
+    "http://www.w3.org/2006/time#intervalDuring": [
+      {
+        "type": "uri",
+        "value": "http://data.library.sh.cn/authority/temporal/95vht2jlgtwimv93"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/beginYear": [
+      {
+        "type": "literal",
+        "value": "-179",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/endYear": [
+      {
+        "type": "literal",
+        "value": "-164",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/dynasty": [
+      {
+        "type": "literal",
+        "value": "汉"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarchName": [
+      {
+        "type": "literal",
+        "value": "刘恒"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarch": [
+      {
+        "type": "literal",
+        "value": "文帝"
+      }
+    ]
+  }
+}

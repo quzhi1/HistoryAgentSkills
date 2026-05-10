@@ -1,0 +1,60 @@
+{
+  "http://data.library.sh.cn/authority/temporal/jfcr2z62ko1bibn8": {
+    "http://www.library.sh.cn/ontology/reignTitle": [
+      {
+        "type": "literal",
+        "value": "雍熙"
+      }
+    ],
+    "http://bibframe.org/vocab/label": [
+      {
+        "type": "literal",
+        "value": "北宋雍熙"
+      }
+    ],
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "http://www.library.sh.cn/ontology/Temporal"
+      }
+    ],
+    "http://www.w3.org/2006/time#intervalDuring": [
+      {
+        "type": "uri",
+        "value": "http://data.library.sh.cn/authority/temporal/1muluhi3chuyhtw1"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/beginYear": [
+      {
+        "type": "literal",
+        "value": "984",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/endYear": [
+      {
+        "type": "literal",
+        "value": "987",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/dynasty": [
+      {
+        "type": "literal",
+        "value": "北宋"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarchName": [
+      {
+        "type": "literal",
+        "value": "赵光义"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarch": [
+      {
+        "type": "literal",
+        "value": "太宗"
+      }
+    ]
+  }
+}

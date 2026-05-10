@@ -1,0 +1,58 @@
+{
+  "http://data.library.sh.cn/authority/temporal/o53tkh3cn83dc3gy": {
+    "http://www.library.sh.cn/ontology/reignTitle": [
+      {
+        "type": "literal",
+        "value": "建元"
+      }
+    ],
+    "http://bibframe.org/vocab/label": [
+      {
+        "type": "literal",
+        "value": "汉建元"
+      }
+    ],
+    "http://www.w3.org/1999/02/22-rdf-syntax-ns#type": [
+      {
+        "type": "uri",
+        "value": "http://www.library.sh.cn/ontology/Temporal"
+      }
+    ],
+    "http://www.w3.org/2006/time#intervalDuring": [
+      {
+        "type": "uri",
+        "value": "http://data.library.sh.cn/authority/temporal/e4q96sxq5sqpcio3"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/beginYear": [
+      {
+        "type": "literal",
+        "value": "315",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/endYear": [
+      {
+        "type": "literal",
+        "value": "316",
+        "datatype": "http://www.w3.org/2001/XMLSchema#integer"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/dynasty": [
+      {
+        "type": "literal",
+        "value": "汉"
+      },
+      {
+        "type": "literal",
+        "value": "前赵"
+      }
+    ],
+    "http://www.library.sh.cn/ontology/monarchName": [
+      {
+        "type": "literal",
+        "value": "刘聪"
+      }
+    ]
+  }
+}

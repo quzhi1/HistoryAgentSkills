@@ -75,9 +75,9 @@ curl -X POST "https://open.cnkgraph.com/api/Book/Search" \
 
 ```bash
 # 脚本示例
-python cnkgraph/scripts/query_api.py find --keyword "崔浩"
-python cnkgraph/scripts/query_api.py find --keyword "暴扬国恶"
-python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
+venv/bin/python cnkgraph/scripts/query_api.py find --keyword "崔浩"
+venv/bin/python cnkgraph/scripts/query_api.py find --keyword "暴扬国恶"
+venv/bin/python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 ```
 
 ```bash
@@ -105,7 +105,7 @@ curl "https://open.cnkgraph.com/api/People/苏轼"
 
 回答历史人物、事件类问题时，**不要仅查辞典**；应视情况用 cnkgraph API 补充**具体时间、地点、相关人物、起因、经过、结果**：
 
-1. **古籍原文片段**：使用 **POST /api/Book/Find**（脚本命令：`python cnkgraph/scripts/query_api.py find --keyword "关键词"`）。
+1. **古籍原文片段**：使用 **POST /api/Book/Find**（脚本命令：`venv/bin/python cnkgraph/scripts/query_api.py find --keyword "关键词"`）。
    - 请求体：`{"Key": "关键词", "PageNo": 0}`，可选 `BookIds` 限定书籍。
    - 返回：`Result[].Books[].Volumes[].Pages[]` 中每项含 **PreviousText**（前文）、**MatchedText**（命中词）、**LaterText**（后文），即带上下文的原文片段；`Book`、`Volume` 为出处（书名、卷）。
    - **多次查询策略**：对人名、事件名、关键短语（如「暴扬国恶」「国史 刊石」）**分别**进行多次查询（而非堆在一个关键词中），可交叉验证并补充起因、经过、结果。每次查询使用简短关键词（2-6 字），避免超过 8 字的复杂组合。
@@ -352,7 +352,7 @@ if response.status_code != 200:
 ### 需要的Python包
 
 ```bash
-pip install requests
+./setup_venv.sh
 ```
 
 ### 推荐做法

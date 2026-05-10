@@ -1,157 +1,289 @@
 #!/usr/bin/env python3
-"""
-简单测试脚本 - 验证系统是否正常工作
+"""System checks for the Chinese history expert skill."""
 
-运行: python test_system.py
-"""
+from __future__ import annotations
 
-import sys
 import os
+import json
+import sqlite3
+import subprocess
+import sys
+from pathlib import Path
 
-def test_imports():
-    """测试依赖包是否安装"""
-    print("测试1: 检查依赖包...")
-    
+
+ROOT = Path(__file__).resolve().parent
+SCRIPTS_DIR = ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+
+def test_imports() -> bool:
+    """Check Python and command dependencies."""
+    print("测试1: 检查依赖...")
+    ok = True
+
     try:
-        import requests
+        import requests  # noqa: F401
         print("✓ requests 已安装")
     except ImportError:
-        print("✗ requests 未安装，请运行: pip install requests")
-        return False
-    
-    # 注意: mdict-utils 是命令行工具，不是Python包
-    # 我们通过检查命令是否可用来验证
-    import subprocess
-    try:
-        result = subprocess.run(
-            ["mdict", "--version"],
-            capture_output=True,
-            timeout=5
-        )
-        if result.returncode == 0:
-            print("✓ mdict-utils 已安装")
-        else:
-            print("✗ mdict-utils 可能未正确安装")
-            return False
-    except FileNotFoundError:
-        print("✗ mdict 命令未找到，请运行: pip install mdict-utils")
-        return False
-    except Exception as e:
-        print(f"✗ 检查 mdict 时出错: {e}")
-        return False
-    
-    return True
+        print("✗ requests 未安装，请运行: ./setup_venv.sh")
+        ok = False
 
-def test_files():
-    """测试必要文件是否存在"""
+    try:
+        con = sqlite3.connect(":memory:")
+        con.execute("CREATE VIRTUAL TABLE t USING fts5(x, tokenize='trigram')")
+        print("✓ SQLite FTS5 trigram 可用")
+    except sqlite3.DatabaseError as exc:
+        print(f"✗ SQLite FTS5 trigram 不可用: {exc}")
+        ok = False
+
+    mdict_bin = ROOT / "venv" / "bin" / "mdict"
+    if not mdict_bin.exists():
+        print(f"✗ mdict 不存在: {mdict_bin}，请运行 ./setup_venv.sh")
+        return False
+    result = subprocess.run([str(mdict_bin), "--version"], capture_output=True, text=True, timeout=5)
+    if result.returncode == 0:
+        print("✓ mdict-utils 已安装")
+    else:
+        print("✗ mdict-utils 可能未正确安装")
+        ok = False
+
+    return ok
+
+
+def test_files() -> bool:
+    """Check required project files."""
     print("\n测试2: 检查文件...")
-    
     required_files = [
         "dict/历史辞典4合1.mdx",
-        "dict/历史辞典4in1.mdd",
         "dict/scripts/query_dict.py",
         "cnkgraph/scripts/query_api.py",
         "scripts/history_query.py",
+        "scripts/fetch_dynasty_data.py",
+        "scripts/dynasty_converter.py",
+        "scripts/book_search.py",
+        "data/dynasty/dynasty_index.json",
+        "data/dynasty/metadata.json",
         "SKILL.md",
         "dict/SKILL.md",
-        "cnkgraph/SKILL.md"
+        "cnkgraph/SKILL.md",
     ]
-    
     all_exist = True
     for file in required_files:
-        if os.path.exists(file):
+        path = ROOT / file
+        if path.exists():
             print(f"✓ {file}")
         else:
             print(f"✗ {file} 不存在")
             all_exist = False
-    
+
+    raw_dir = ROOT / "data" / "dynasty" / "raw"
+    raw_count = len(list(raw_dir.glob("*.json"))) if raw_dir.exists() else 0
+    metadata_path = ROOT / "data" / "dynasty" / "metadata.json"
+    metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
+    expected_count = metadata.get("index_count", 879)
+    if raw_count == expected_count == metadata.get("raw_count"):
+        print(f"✓ data/dynasty/raw 包含 {raw_count} 个 JSON 文件")
+    else:
+        print(f"✗ 年表 JSON 数量不一致: raw={raw_count}, metadata={metadata}")
+        all_exist = False
+
     return all_exist
 
-def test_scripts():
-    """测试脚本是否可执行"""
-    print("\n测试3: 检查脚本...")
-    
+
+def test_scripts_compile() -> bool:
+    """Check Python scripts compile."""
+    print("\n测试3: 检查脚本语法...")
     scripts = [
         "dict/scripts/query_dict.py",
         "cnkgraph/scripts/query_api.py",
-        "scripts/history_query.py"
+        "scripts/history_query.py",
+        "scripts/fetch_dynasty_data.py",
+        "scripts/dynasty_converter.py",
+        "scripts/book_search.py",
     ]
-    
-    for script in scripts:
-        if os.access(script, os.X_OK):
-            print(f"✓ {script} 可执行")
-        else:
-            print(f"⚠ {script} 不可执行（可能需要: chmod +x {script}）")
-    
-    return True
+    result = subprocess.run(
+        [str(ROOT / "venv" / "bin" / "python"), "-m", "py_compile", *scripts],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=20,
+    )
+    if result.returncode == 0:
+        print("✓ 所有 Python 脚本语法通过")
+        return True
+    print(result.stderr)
+    return False
 
-def test_api_connection():
-    """测试API连接"""
-    print("\n测试4: 检查API连接...")
-    
-    try:
-        import requests
-        response = requests.get(
-            "https://open.cnkgraph.com",
-            timeout=10
-        )
-        if response.status_code == 200:
-            print("✓ API服务器可访问")
-            return True
-        else:
-            print(f"⚠ API服务器返回状态码: {response.status_code}")
-            return False
-    except requests.exceptions.Timeout:
-        print("✗ API连接超时")
-        return False
-    except requests.exceptions.ConnectionError:
-        print("✗ 无法连接到API服务器")
-        return False
-    except Exception as e:
-        print(f"✗ API连接测试失败: {e}")
-        return False
 
-def main():
-    print("="*60)
-    print("中国历史专家系统 - 系统测试")
-    print("="*60)
-    print()
-    
-    results = []
-    
-    # 运行所有测试
-    results.append(("依赖包", test_imports()))
-    results.append(("文件完整性", test_files()))
-    results.append(("脚本可执行性", test_scripts()))
-    results.append(("API连接", test_api_connection()))
-    
-    # 总结
-    print("\n" + "="*60)
-    print("测试总结")
-    print("="*60)
-    
-    passed = sum(1 for _, r in results if r)
-    total = len(results)
-    
-    for name, result in results:
-        status = "✓ 通过" if result else "✗ 失败"
-        print(f"{name}: {status}")
-    
-    print(f"\n总计: {passed}/{total} 测试通过")
-    
-    if passed == total:
-        print("\n🎉 所有测试通过！系统已就绪。")
-        print("\n快速开始:")
-        print("  1. 在Cursor中直接问历史问题")
-        print("  2. 或运行: python dict/scripts/query_dict.py '李白'")
-        print("  3. 查看文档: README.md 或 QUICKSTART.md")
-        return 0
+def _fixture_index():
+    return [
+        {
+            "dynasty": "唐",
+            "reignTitle": "天宝",
+            "reignTitles": ["天宝"],
+            "monarch": "玄宗",
+            "monarchName": "李隆基",
+            "begin": 742,
+            "end": 756,
+            "uri": "fixture://tang-tianbao",
+            "source_credit": "fixture",
+        },
+        {
+            "dynasty": "吴越",
+            "reignTitle": "天宝",
+            "reignTitles": ["天宝"],
+            "monarch": "",
+            "monarchName": "钱镠",
+            "begin": 908,
+            "end": 912,
+            "uri": "fixture://wuyue-tianbao",
+            "source_credit": "fixture",
+        },
+        {
+            "dynasty": "清",
+            "reignTitle": "康熙",
+            "reignTitles": ["康熙"],
+            "monarch": "圣祖",
+            "monarchName": "爱新觉罗玄烨",
+            "begin": 1662,
+            "end": 1722,
+            "uri": "fixture://qing-kangxi",
+            "source_credit": "fixture",
+        },
+        {
+            "dynasty": "民国",
+            "reignTitle": "",
+            "reignTitles": [],
+            "monarch": "",
+            "monarchName": "",
+            "begin": 1912,
+            "end": 1949,
+            "uri": "fixture://minguo",
+            "source_credit": "fixture",
+        },
+    ]
+
+
+def test_dynasty_converter() -> bool:
+    """Test reign-year conversion with fixtures."""
+    print("\n测试4: 年号换算...")
+    from dynasty_converter import convert_era_expression
+
+    ok = True
+    index = _fixture_index()
+
+    checks = [
+        ("天宝三载", [744, 910]),
+        ("天宝十四载", [755]),
+        ("康熙六十一年", [1722]),
+        ("民国元年", [1912]),
+    ]
+    for expression, years in checks:
+        result = convert_era_expression(expression, index=index)
+        got = sorted(item["gregorian_year"] for item in result["matches"])
+        if got == sorted(years):
+            print(f"✓ {expression} -> {got}")
+        else:
+            print(f"✗ {expression} 预期 {years}，实际 {got}，错误 {result['errors']}")
+            ok = False
+
+    ambiguous = convert_era_expression("天宝三载", index=index)
+    if len(ambiguous["matches"]) == 2:
+        print("✓ 同名年号默认返回全部匹配")
     else:
-        print("\n⚠️  部分测试失败，请查看上面的详细信息。")
-        print("\n故障排查:")
-        print("  1. 运行: pip install -r requirements.txt")
-        print("  2. 查看: TROUBLESHOOTING.md")
-        return 1
+        print("✗ 同名年号未返回全部匹配")
+        ok = False
+
+    return ok
+
+
+def test_fetch_normalization() -> bool:
+    """Test dynasty fetcher normalization and fail-closed validation."""
+    print("\n测试5: 年表数据规范化...")
+    from fetch_dynasty_data import DynastyDataError, normalize_item
+
+    item = {
+        "dynasty": "唐",
+        "reignTitle": "天宝",
+        "monarch": "玄宗",
+        "monarchName": "李隆基",
+        "begin": "742",
+        "end": "756",
+        "uri": "http://data.library.sh.cn/authority/temporal/fixture",
+    }
+    normalized = normalize_item(item, {})
+    if normalized["begin"] == 742 and normalized["end"] == 756 and normalized["reignTitles"] == ["天宝"]:
+        print("✓ 年表字段规范化通过")
+    else:
+        print(f"✗ 年表字段规范化异常: {normalized}")
+        return False
+
+    bad_item = dict(item)
+    bad_item.pop("begin")
+    try:
+        normalize_item(bad_item, {})
+    except DynastyDataError:
+        print("✓ 字段缺失会失败闭合")
+        return True
+    print("✗ 字段缺失未失败")
+    return False
+
+
+def test_epub_search() -> bool:
+    """Test local EPUB indexing and searching."""
+    print("\n测试6: EPUB 全文检索...")
+    from book_search import search_books
+
+    try:
+        results = search_books("甲骨文", limit=1, rebuild=True)
+    except Exception as exc:
+        print(f"✗ EPUB 检索失败: {exc}")
+        return False
+    if not results:
+        print("✗ 未检索到“甲骨文”")
+        return False
+    item = results[0]
+    required = ["book_title", "author", "href", "section", "snippet"]
+    if all(key in item for key in required):
+        print(f"✓ EPUB 检索命中: {item['book_title']} / {item['section']}")
+        return True
+    print(f"✗ EPUB 检索结果缺字段: {item}")
+    return False
+
+
+def main() -> int:
+    os.chdir(ROOT)
+    print("=" * 60)
+    print("中国历史专家系统 - 系统测试")
+    print("=" * 60)
+
+    tests = [
+        ("依赖", test_imports),
+        ("文件完整性", test_files),
+        ("脚本语法", test_scripts_compile),
+        ("年号换算", test_dynasty_converter),
+        ("年表规范化", test_fetch_normalization),
+        ("EPUB检索", test_epub_search),
+    ]
+
+    results = []
+    for name, func in tests:
+        try:
+            results.append((name, func()))
+        except Exception as exc:
+            print(f"✗ {name} 测试异常: {exc}")
+            results.append((name, False))
+
+    print("\n" + "=" * 60)
+    print("测试总结")
+    print("=" * 60)
+    passed = sum(1 for _, result in results if result)
+    for name, result in results:
+        print(f"{name}: {'✓ 通过' if result else '✗ 失败'}")
+    print(f"\n总计: {passed}/{len(results)} 测试通过")
+    return 0 if passed == len(results) else 1
+
 
 if __name__ == "__main__":
-    sys.exit(main())
+    raise SystemExit(main())
