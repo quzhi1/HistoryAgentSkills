@@ -58,3 +58,4 @@ query_results/
 
 # Claude Code 本机权限白名单（不进版本库）
 .claude/settings.local.json
+.codex/
