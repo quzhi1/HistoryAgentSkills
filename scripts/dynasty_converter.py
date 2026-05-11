@@ -9,7 +9,7 @@ import re
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
-from fetch_dynasty_data import INDEX_PATH, SOURCE_CREDIT, SOURCE_LICENSE, DynastyDataError, load_index
+from fetch_dynasty_data import INDEX_PATH, DynastyDataError, load_index
 
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -29,6 +29,44 @@ CHINESE_DIGITS = {
     "九": 9,
 }
 CHINESE_UNITS = {"十": 10, "百": 100, "千": 1000}
+
+# Known source-data boundary errata. Keep the raw downloaded JSON untouched and
+# apply these only at conversion time so callers can still audit source values.
+KNOWN_BOUNDARY_CORRECTIONS: Dict[str, Dict[str, Any]] = {
+    # The local Shanghai Library row for 唐先天 currently gives 714-714, which
+    # makes 先天二年 impossible. Standard chronology and the local dictionary's
+    # 渤海/大祚荣 entries require 先天二年 = 713.
+    "http://data.library.sh.cn/authority/temporal/5nyr6anqrz1zld77": {
+        "begin": 712,
+        "end": 713,
+        "note": "本地校正：唐玄宗先天元年为712年，先天二年为713年。",
+    },
+    # The same boundary issue shifts 开元元年 to 714 in the source row; it began
+    # in 713 after 先天二年.
+    "http://data.library.sh.cn/authority/temporal/4ilyrfwurk4tysv8": {
+        "begin": 713,
+        "end": 741,
+        "note": "本地校正：唐玄宗开元元年为713年。",
+    },
+    # The source rows for several short Five Dynasties eras are offset by one
+    # Gregorian year. The dictionary entries and standard chronology require
+    # 后唐同光元年 = 923 and 后唐清泰三年 = 936.
+    "http://data.library.sh.cn/authority/temporal/kc511ful8w2f7sgk": {
+        "begin": 923,
+        "end": 926,
+        "note": "本地校正：后唐同光元年为923年。",
+    },
+    "http://data.library.sh.cn/authority/temporal/7nx1agvmifneyc4c": {
+        "begin": 934,
+        "end": 936,
+        "note": "本地校正：后唐清泰元年为934年，清泰三年为936年。",
+    },
+    "http://data.library.sh.cn/authority/temporal/4t699kyebyl4m2ng": {
+        "begin": 936,
+        "end": 944,
+        "note": "本地校正：后晋天福元年为936年。",
+    },
+}
 
 
 class EraConversionError(ValueError):
@@ -90,6 +128,13 @@ def _format_gregorian(year: int) -> str:
     return f"公元{year}年"
 
 
+def _entry_bounds(entry: Mapping[str, Any]) -> Tuple[Any, Any, Optional[Mapping[str, Any]]]:
+    correction = KNOWN_BOUNDARY_CORRECTIONS.get(str(entry.get("uri") or ""))
+    if correction:
+        return correction.get("begin"), correction.get("end"), correction
+    return entry.get("begin"), entry.get("end"), None
+
+
 def parse_era_expression(expression: str) -> Tuple[Optional[str], str, int]:
     """Return optional dynasty filter, era title, and year sequence."""
     query = expression.strip()
@@ -135,8 +180,6 @@ def convert_era_expression(
         "year_number": year_number,
         "matches": [],
         "errors": [],
-        "source_credit": SOURCE_CREDIT,
-        "source_license": SOURCE_LICENSE,
     }
 
     candidates = [
@@ -149,8 +192,7 @@ def convert_era_expression(
         return result
 
     for entry in candidates:
-        begin = entry.get("begin")
-        end = entry.get("end")
+        begin, end, correction = _entry_bounds(entry)
         if not isinstance(begin, int):
             result["errors"].append(f"{era} 的开始年份无效: {entry.get('uri')}")
             continue
@@ -173,9 +215,17 @@ def convert_era_expression(
                 "begin": begin,
                 "end": end,
                 "uri": entry.get("uri") or "",
-                "source_credit": entry.get("source_credit", SOURCE_CREDIT),
             }
         )
+        if correction:
+            result["matches"][-1].update(
+                {
+                    "corrected_boundary": True,
+                    "source_begin": entry.get("begin"),
+                    "source_end": entry.get("end"),
+                    "correction_note": correction.get("note", ""),
+                }
+            )
     return result
 
 
@@ -206,8 +256,6 @@ def _print_human(result: Mapping[str, Any]) -> None:
     print(f"查询：{result['query']}")
     if result.get("dynasty_filter"):
         print(f"朝代限定：{result['dynasty_filter']}")
-    print(f"数据来源：{result['source_credit']}")
-    print(f"授权说明：{result['source_license']}")
 
     matches = result.get("matches") or []
     if matches:
@@ -230,10 +278,7 @@ def _print_human(result: Mapping[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description=(
-            "Convert Chinese reign-year expressions to Gregorian years. "
-            f"Data credit: {SOURCE_CREDIT}"
-        )
+        description="Convert Chinese reign-year expressions to Gregorian years."
     )
     parser.add_argument("expression", help='Year expression, e.g. "天宝三载" or "唐 天宝三载".')
     parser.add_argument("--dynasty", help="Optional dynasty filter, e.g. 唐.")

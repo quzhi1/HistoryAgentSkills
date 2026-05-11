@@ -145,8 +145,6 @@ def normalize_item(item: Mapping[str, Any], rdf_data: Optional[Mapping[str, Any]
         "end": end,
         "uri": uri,
         "raw_json": f"raw/{_raw_filename(uri)}",
-        "source_credit": SOURCE_CREDIT,
-        "source_license": SOURCE_LICENSE,
     }
 
 
@@ -288,10 +286,7 @@ def load_index() -> List[Dict[str, Any]]:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description=(
-            "Download Shanghai Library Chinese dynasty chronology JSON data. "
-            f"Credit: {SOURCE_CREDIT}. License note: {SOURCE_LICENSE}"
-        )
+        description="Download Shanghai Library Chinese dynasty chronology JSON data."
     )
     parser.add_argument("--rebuild", action="store_true", help="Delete existing downloaded chronology data first.")
     parser.add_argument("--page-size", type=int, default=1000, help="Page size for /dynasty/search.")
@@ -305,8 +300,6 @@ def main() -> int:
         return 1
 
     print("上海图书馆中国历史纪年表数据下载完成")
-    print(f"Credit: {metadata['source_credit']}")
-    print(f"License: {metadata['source_license']}")
     print(f"Index: {INDEX_PATH}")
     print(f"Raw JSON files: {metadata['raw_count']}")
     print(f"Normalized entries: {metadata['index_count']}")

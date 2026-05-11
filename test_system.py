@@ -88,6 +88,20 @@ def test_files() -> bool:
         print(f"✗ 年表 JSON 数量不一致: raw={raw_count}, metadata={metadata}")
         all_exist = False
 
+    index_path = ROOT / "data" / "dynasty" / "dynasty_index.json"
+    if index_path.exists():
+        index = json.loads(index_path.read_text(encoding="utf-8"))
+        duplicated_source_fields = [
+            item.get("uri", "<unknown>")
+            for item in index
+            if "source_credit" in item or "source_license" in item
+        ]
+        if duplicated_source_fields:
+            print(f"✗ 年表索引条目重复保存来源字段: {duplicated_source_fields[:3]}")
+            all_exist = False
+        else:
+            print("✓ 年表索引条目未重复保存来源字段")
+
     return all_exist
 
 
@@ -127,7 +141,6 @@ def _fixture_index():
             "begin": 742,
             "end": 756,
             "uri": "fixture://tang-tianbao",
-            "source_credit": "fixture",
         },
         {
             "dynasty": "吴越",
@@ -138,7 +151,6 @@ def _fixture_index():
             "begin": 908,
             "end": 912,
             "uri": "fixture://wuyue-tianbao",
-            "source_credit": "fixture",
         },
         {
             "dynasty": "清",
@@ -149,7 +161,6 @@ def _fixture_index():
             "begin": 1662,
             "end": 1722,
             "uri": "fixture://qing-kangxi",
-            "source_credit": "fixture",
         },
         {
             "dynasty": "民国",
@@ -160,7 +171,46 @@ def _fixture_index():
             "begin": 1912,
             "end": 1949,
             "uri": "fixture://minguo",
-            "source_credit": "fixture",
+        },
+        {
+            "dynasty": "唐",
+            "reignTitle": "先天",
+            "reignTitles": ["先天"],
+            "monarch": "玄宗",
+            "monarchName": "李隆基",
+            "begin": 714,
+            "end": 714,
+            "uri": "http://data.library.sh.cn/authority/temporal/5nyr6anqrz1zld77",
+        },
+        {
+            "dynasty": "后唐",
+            "reignTitle": "同光",
+            "reignTitles": ["同光"],
+            "monarch": "庄宗",
+            "monarchName": "李存勗",
+            "begin": 924,
+            "end": 926,
+            "uri": "http://data.library.sh.cn/authority/temporal/kc511ful8w2f7sgk",
+        },
+        {
+            "dynasty": "后唐",
+            "reignTitle": "清泰",
+            "reignTitles": ["清泰"],
+            "monarch": "末帝",
+            "monarchName": "李从珂",
+            "begin": 935,
+            "end": 936,
+            "uri": "http://data.library.sh.cn/authority/temporal/7nx1agvmifneyc4c",
+        },
+        {
+            "dynasty": "后晋",
+            "reignTitle": "天福",
+            "reignTitles": ["天福"],
+            "monarch": "高祖",
+            "monarchName": "石敬瑭",
+            "begin": 937,
+            "end": 944,
+            "uri": "http://data.library.sh.cn/authority/temporal/4t699kyebyl4m2ng",
         },
     ]
 
@@ -178,6 +228,10 @@ def test_dynasty_converter() -> bool:
         ("天宝十四载", [755]),
         ("康熙六十一年", [1722]),
         ("民国元年", [1912]),
+        ("先天二年", [713]),
+        ("后唐 同光元年", [923]),
+        ("后唐 清泰三年", [936]),
+        ("后晋 天福元年", [936]),
     ]
     for expression, years in checks:
         result = convert_era_expression(expression, index=index)
@@ -218,6 +272,10 @@ def test_fetch_normalization() -> bool:
     else:
         print(f"✗ 年表字段规范化异常: {normalized}")
         return False
+    if "source_credit" in normalized or "source_license" in normalized:
+        print("✗ 年表索引条目不应重复包含 source_credit/source_license")
+        return False
+    print("✓ 年表索引条目不重复保存来源字段")
 
     bad_item = dict(item)
     bad_item.pop("begin")

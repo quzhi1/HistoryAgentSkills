@@ -151,7 +151,7 @@ class HistoryExpert:
                 print(f"✓ {item.get('dynasty')}{reign}{era_result['year_number']}年 = {item['gregorian_label']}")
             for error in era_result.get("errors", []):
                 print(f"⚠️  {error}")
-            print(f"数据来源: {era_result['source_credit']}\n")
+            print()
 
         # 步骤0.5：从本地史料学 EPUB 判断搜集方向
         print("🧭 步骤0.5: 检索本地史料学 EPUB，判断搜集方向...")
