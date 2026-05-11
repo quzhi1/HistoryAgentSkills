@@ -19,7 +19,7 @@ allowed-tools: Bash, Read, Grep, Glob
 cd /Users/zhi.q/HistoryAgentSkills && venv/bin/python scripts/dynasty_converter.py "<年号纪年>"
 ```
 
-回答中写作：`年号纪年（公元XXXX年）`。数据源 credit 保留在代码和 `data/dynasty/metadata.json`，不要在每次回答里重复输出。若同名年号有多个候选，按上下文判断；判断不了就列出歧义。
+回答中写作：`年号纪年（公元XXXX年）`。换算脚本调用 cnkgraph Calendar API；若 API 返回同名年号或多政权候选，按上下文判断，判断不了就列出歧义。
 
 搜集史料前可用本地史料学 EPUB 判断方向：
 

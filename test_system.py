@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import os
-import json
 import sqlite3
 import subprocess
 import sys
@@ -59,11 +58,8 @@ def test_files() -> bool:
         "dict/scripts/query_dict.py",
         "cnkgraph/scripts/query_api.py",
         "scripts/history_query.py",
-        "scripts/fetch_dynasty_data.py",
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
-        "data/dynasty/dynasty_index.json",
-        "data/dynasty/metadata.json",
         "SKILL.md",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
@@ -77,30 +73,17 @@ def test_files() -> bool:
             print(f"✗ {file} 不存在")
             all_exist = False
 
-    raw_dir = ROOT / "data" / "dynasty" / "raw"
-    raw_count = len(list(raw_dir.glob("*.json"))) if raw_dir.exists() else 0
-    metadata_path = ROOT / "data" / "dynasty" / "metadata.json"
-    metadata = json.loads(metadata_path.read_text(encoding="utf-8")) if metadata_path.exists() else {}
-    expected_count = metadata.get("index_count", 879)
-    if raw_count == expected_count == metadata.get("raw_count"):
-        print(f"✓ data/dynasty/raw 包含 {raw_count} 个 JSON 文件")
-    else:
-        print(f"✗ 年表 JSON 数量不一致: raw={raw_count}, metadata={metadata}")
-        all_exist = False
-
-    index_path = ROOT / "data" / "dynasty" / "dynasty_index.json"
-    if index_path.exists():
-        index = json.loads(index_path.read_text(encoding="utf-8"))
-        duplicated_source_fields = [
-            item.get("uri", "<unknown>")
-            for item in index
-            if "source_credit" in item or "source_license" in item
-        ]
-        if duplicated_source_fields:
-            print(f"✗ 年表索引条目重复保存来源字段: {duplicated_source_fields[:3]}")
+    removed_paths = [
+        "scripts/fetch_dynasty_data.py",
+        "data/dynasty",
+    ]
+    for file in removed_paths:
+        path = ROOT / file
+        if path.exists():
+            print(f"✗ 已废弃的本地年表文件仍存在: {file}")
             all_exist = False
         else:
-            print("✓ 年表索引条目未重复保存来源字段")
+            print(f"✓ 已移除 {file}")
 
     return all_exist
 
@@ -112,7 +95,6 @@ def test_scripts_compile() -> bool:
         "dict/scripts/query_dict.py",
         "cnkgraph/scripts/query_api.py",
         "scripts/history_query.py",
-        "scripts/fetch_dynasty_data.py",
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
     ]
@@ -130,89 +112,87 @@ def test_scripts_compile() -> bool:
     return False
 
 
-def _fixture_index():
-    return [
-        {
-            "dynasty": "唐",
-            "reignTitle": "天宝",
-            "reignTitles": ["天宝"],
-            "monarch": "玄宗",
-            "monarchName": "李隆基",
-            "begin": 742,
-            "end": 756,
-            "uri": "fixture://tang-tianbao",
+class FakeCalendarClient:
+    """Offline fixture for cnkgraph Calendar API tests."""
+
+    def __init__(self):
+        self.payloads = {
+            "天宝三载": _calendar_payload(744, "天宝", "续唐", "李隆基", "742年", "756年七月", "三年"),
+            "吴越天宝三载": _calendar_payload(910, "天宝", "吴越", "钱镠", "908年", "912年", "三年"),
+            "天宝十四载": _calendar_payload(755, "天宝", "续唐", "李隆基", "742年", "756年七月", "十四年"),
+            "康熙六十一年": _calendar_payload(1722, "康熙", "清朝", "玄烨", "1662年", "1722年", "六十一年"),
+            "民国元年": _calendar_payload(1912, None, "民国", None, "1912年", "1949年", "元年", era_name="民国"),
+            "先天二年": _calendar_payload(713, "先天", "续唐", "李隆基", "712年八月", "713年十一月", "二年"),
+            "后唐同光元年": _calendar_payload(923, "同光", "后唐", "李存勖", "923年四月", "926年四月", "元年"),
+            "后唐清泰三年": _calendar_payload(936, "清泰", "后唐", "李从珂", "934年四月", "936年闰十一月", "三年"),
+            "后晋天福元年": _calendar_payload(936, "天福", "后晋", "石敬瑭", "936年十一月", "947年十二月", "元年"),
+            "清泰三年": _multi_calendar_payload(
+                936,
+                "清泰",
+                [
+                    ("后唐", "李从珂", "934年四月", "936年闰十一月", "三年"),
+                    ("吴越", "钱元瓘", "934年四月", "936年闰十一月", "三年"),
+                ],
+            ),
+        }
+
+    def get_date(self, key: str):
+        from dynasty_converter import EraConversionError
+
+        if key not in self.payloads:
+            raise EraConversionError(f"fixture missing Calendar/Date payload: {key}")
+        return self.payloads[key]
+
+
+def _calendar_payload(
+    year: int,
+    date_era_name: str | None,
+    dynasty: str,
+    king_name: str | None,
+    begin: str,
+    end: str,
+    calculated_year: str,
+    era_name: str | None = None,
+):
+    return _multi_calendar_payload(
+        year,
+        date_era_name,
+        [(dynasty, king_name, begin, end, calculated_year)],
+        era_name=era_name or date_era_name,
+    )
+
+
+def _multi_calendar_payload(year: int, date_era_name: str | None, rows, era_name: str | None = None):
+    return {
+        "Date": {
+            "Year": str(year),
+            "YearGanZhi": "",
+            "EraName": date_era_name,
+            "EraId": 1 if date_era_name else 0,
         },
-        {
-            "dynasty": "吴越",
-            "reignTitle": "天宝",
-            "reignTitles": ["天宝"],
-            "monarch": "",
-            "monarchName": "钱镠",
-            "begin": 908,
-            "end": 912,
-            "uri": "fixture://wuyue-tianbao",
-        },
-        {
-            "dynasty": "清",
-            "reignTitle": "康熙",
-            "reignTitles": ["康熙"],
-            "monarch": "圣祖",
-            "monarchName": "爱新觉罗玄烨",
-            "begin": 1662,
-            "end": 1722,
-            "uri": "fixture://qing-kangxi",
-        },
-        {
-            "dynasty": "民国",
-            "reignTitle": "",
-            "reignTitles": [],
-            "monarch": "",
-            "monarchName": "",
-            "begin": 1912,
-            "end": 1949,
-            "uri": "fixture://minguo",
-        },
-        {
-            "dynasty": "唐",
-            "reignTitle": "先天",
-            "reignTitles": ["先天"],
-            "monarch": "玄宗",
-            "monarchName": "李隆基",
-            "begin": 714,
-            "end": 714,
-            "uri": "http://data.library.sh.cn/authority/temporal/5nyr6anqrz1zld77",
-        },
-        {
-            "dynasty": "后唐",
-            "reignTitle": "同光",
-            "reignTitles": ["同光"],
-            "monarch": "庄宗",
-            "monarchName": "李存勗",
-            "begin": 924,
-            "end": 926,
-            "uri": "http://data.library.sh.cn/authority/temporal/kc511ful8w2f7sgk",
-        },
-        {
-            "dynasty": "后唐",
-            "reignTitle": "清泰",
-            "reignTitles": ["清泰"],
-            "monarch": "末帝",
-            "monarchName": "李从珂",
-            "begin": 935,
-            "end": 936,
-            "uri": "http://data.library.sh.cn/authority/temporal/7nx1agvmifneyc4c",
-        },
-        {
-            "dynasty": "后晋",
-            "reignTitle": "天福",
-            "reignTitles": ["天福"],
-            "monarch": "高祖",
-            "monarchName": "石敬瑭",
-            "begin": 937,
-            "end": 944,
-            "uri": "http://data.library.sh.cn/authority/temporal/4t699kyebyl4m2ng",
-        },
-    ]
+        "EraYears": [
+            {
+                "Dynasty": dynasty,
+                "Kings": [
+                    {
+                        "Id": index + 1,
+                        "Name": king_name,
+                        "EraYears": [
+                            {
+                                "Id": index + 100,
+                                "Name": era_name or date_era_name,
+                                "BeginYear": begin,
+                                "EndYear": end,
+                                "CalculatedYear": calculated_year,
+                            }
+                        ],
+                    }
+                ],
+            }
+            for index, (dynasty, king_name, begin, end, calculated_year) in enumerate(rows)
+        ],
+        "Links": {"Count": 0},
+    }
 
 
 def test_dynasty_converter() -> bool:
@@ -221,10 +201,11 @@ def test_dynasty_converter() -> bool:
     from dynasty_converter import convert_era_expression
 
     ok = True
-    index = _fixture_index()
+    client = FakeCalendarClient()
 
     checks = [
-        ("天宝三载", [744, 910]),
+        ("天宝三载", [744]),
+        ("吴越 天宝三载", [910]),
         ("天宝十四载", [755]),
         ("康熙六十一年", [1722]),
         ("民国元年", [1912]),
@@ -234,7 +215,7 @@ def test_dynasty_converter() -> bool:
         ("后晋 天福元年", [936]),
     ]
     for expression, years in checks:
-        result = convert_era_expression(expression, index=index)
+        result = convert_era_expression(expression, api_client=client)
         got = sorted(item["gregorian_year"] for item in result["matches"])
         if got == sorted(years):
             print(f"✓ {expression} -> {got}")
@@ -242,55 +223,19 @@ def test_dynasty_converter() -> bool:
             print(f"✗ {expression} 预期 {years}，实际 {got}，错误 {result['errors']}")
             ok = False
 
-    ambiguous = convert_era_expression("天宝三载", index=index)
+    ambiguous = convert_era_expression("清泰三年", api_client=client)
     if len(ambiguous["matches"]) == 2:
-        print("✓ 同名年号默认返回全部匹配")
+        print("✓ API 多政权候选会保留为多条匹配")
     else:
-        print("✗ 同名年号未返回全部匹配")
+        print("✗ API 多政权候选未保留")
         ok = False
 
     return ok
 
 
-def test_fetch_normalization() -> bool:
-    """Test dynasty fetcher normalization and fail-closed validation."""
-    print("\n测试5: 年表数据规范化...")
-    from fetch_dynasty_data import DynastyDataError, normalize_item
-
-    item = {
-        "dynasty": "唐",
-        "reignTitle": "天宝",
-        "monarch": "玄宗",
-        "monarchName": "李隆基",
-        "begin": "742",
-        "end": "756",
-        "uri": "http://data.library.sh.cn/authority/temporal/fixture",
-    }
-    normalized = normalize_item(item, {})
-    if normalized["begin"] == 742 and normalized["end"] == 756 and normalized["reignTitles"] == ["天宝"]:
-        print("✓ 年表字段规范化通过")
-    else:
-        print(f"✗ 年表字段规范化异常: {normalized}")
-        return False
-    if "source_credit" in normalized or "source_license" in normalized:
-        print("✗ 年表索引条目不应重复包含 source_credit/source_license")
-        return False
-    print("✓ 年表索引条目不重复保存来源字段")
-
-    bad_item = dict(item)
-    bad_item.pop("begin")
-    try:
-        normalize_item(bad_item, {})
-    except DynastyDataError:
-        print("✓ 字段缺失会失败闭合")
-        return True
-    print("✗ 字段缺失未失败")
-    return False
-
-
 def test_epub_search() -> bool:
     """Test local EPUB indexing and searching."""
-    print("\n测试6: EPUB 全文检索...")
+    print("\n测试5: EPUB 全文检索...")
     from book_search import search_books
 
     try:
@@ -321,7 +266,6 @@ def main() -> int:
         ("文件完整性", test_files),
         ("脚本语法", test_scripts_compile),
         ("年号换算", test_dynasty_converter),
-        ("年表规范化", test_fetch_normalization),
         ("EPUB检索", test_epub_search),
     ]
 

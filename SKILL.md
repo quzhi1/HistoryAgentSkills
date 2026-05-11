@@ -21,10 +21,10 @@ description: 回答中国历史问题的专家系统。查询权威历史辞典�
    - 提供诗词和文学作品
    - **注**：正史原文获取功能改进中
 
-3. **上海图书馆中国历史纪年表**（本地年号换算）
-   - 数据来自上海图书馆开放数据平台：中国历史纪年表
+3. **cnkgraph Calendar API**（年号换算）
+   - 调用 open.cnkgraph.com 的年历/日期解析接口
    - 查询年号纪年并换算为公元纪年
-   - 同名年号默认列出全部匹配，由上下文判断
+   - 同名或多政权候选由 API 返回结果与上下文共同判断
 
 4. **本地史料学 EPUB 检索**
    - 检索 `books/` 下两本史料学入门书
@@ -107,9 +107,9 @@ venv/bin/python scripts/dynasty_converter.py "天宝十四载"
 venv/bin/python scripts/dynasty_converter.py "唐 天宝三载"
 ```
 
-- 数据来源 credit 保留在代码和 `data/dynasty/metadata.json`，不要在每次历史回答中重复输出。
+- 换算脚本调用 open.cnkgraph.com 的 Calendar API；不要在每次历史回答中重复输出 API 来源说明。
 - 换算只精确到年份，不推断月份、日期或改元日。
-- 同名年号默认列出全部匹配；若上下文不能判定，必须说明存在歧义。
+- 如果 API 返回同名年号或多政权候选，按上下文选择；不能选择时必须说明存在歧义。
 
 ### 步骤2：查询历史辞典
 

@@ -1,19 +1,25 @@
 #!/usr/bin/env python3
-"""Convert Chinese reign-year expressions to Gregorian years."""
+"""Convert Chinese reign-year expressions through the cnkgraph Calendar API."""
 
 from __future__ import annotations
 
 import argparse
 import json
+import os
 import re
-from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Protocol, Tuple
+from urllib.parse import quote
 
-from fetch_dynasty_data import INDEX_PATH, DynastyDataError, load_index
+import requests
 
 
-ROOT = Path(__file__).resolve().parents[1]
+API_BASE_URL = os.environ.get("CNKGRAPH_API_BASE", "https://open.cnkgraph.com/api").rstrip("/")
+try:
+    TIMEOUT = int(os.environ.get("CNKGRAPH_TIMEOUT", "30"))
+except ValueError:
+    TIMEOUT = 30
 YEAR_PATTERN = re.compile(r"(?P<era>[\u4e00-\u9fff·]+?)(?P<number>元|[零〇一二两三四五六七八九十百千\d]+)(?P<unit>年|载)")
+SCAN_PATTERN = re.compile(r"[\u4e00-\u9fff·]{2,12}(?:元|[零〇一二两三四五六七八九十百千\d]+)(?:年|载)")
 CHINESE_DIGITS = {
     "零": 0,
     "〇": 0,
@@ -30,47 +36,40 @@ CHINESE_DIGITS = {
 }
 CHINESE_UNITS = {"十": 10, "百": 100, "千": 1000}
 
-# Known source-data boundary errata. Keep the raw downloaded JSON untouched and
-# apply these only at conversion time so callers can still audit source values.
-KNOWN_BOUNDARY_CORRECTIONS: Dict[str, Dict[str, Any]] = {
-    # The local Shanghai Library row for 唐先天 currently gives 714-714, which
-    # makes 先天二年 impossible. Standard chronology and the local dictionary's
-    # 渤海/大祚荣 entries require 先天二年 = 713.
-    "http://data.library.sh.cn/authority/temporal/5nyr6anqrz1zld77": {
-        "begin": 712,
-        "end": 713,
-        "note": "本地校正：唐玄宗先天元年为712年，先天二年为713年。",
-    },
-    # The same boundary issue shifts 开元元年 to 714 in the source row; it began
-    # in 713 after 先天二年.
-    "http://data.library.sh.cn/authority/temporal/4ilyrfwurk4tysv8": {
-        "begin": 713,
-        "end": 741,
-        "note": "本地校正：唐玄宗开元元年为713年。",
-    },
-    # The source rows for several short Five Dynasties eras are offset by one
-    # Gregorian year. The dictionary entries and standard chronology require
-    # 后唐同光元年 = 923 and 后唐清泰三年 = 936.
-    "http://data.library.sh.cn/authority/temporal/kc511ful8w2f7sgk": {
-        "begin": 923,
-        "end": 926,
-        "note": "本地校正：后唐同光元年为923年。",
-    },
-    "http://data.library.sh.cn/authority/temporal/7nx1agvmifneyc4c": {
-        "begin": 934,
-        "end": 936,
-        "note": "本地校正：后唐清泰元年为934年，清泰三年为936年。",
-    },
-    "http://data.library.sh.cn/authority/temporal/4t699kyebyl4m2ng": {
-        "begin": 936,
-        "end": 944,
-        "note": "本地校正：后晋天福元年为936年。",
-    },
-}
-
 
 class EraConversionError(ValueError):
     """Raised when an era-year expression cannot be parsed or converted."""
+
+
+class CalendarClient(Protocol):
+    """Small protocol for tests and alternate API clients."""
+
+    def get_date(self, key: str) -> Mapping[str, Any]:
+        """Return the JSON body from GET /api/Calendar/Date/{key}."""
+
+
+class CnkgraphCalendarClient:
+    """HTTP client for cnkgraph Calendar date parsing."""
+
+    def __init__(self, base_url: str = API_BASE_URL, timeout: int = TIMEOUT):
+        self.base_url = base_url.rstrip("/")
+        self.timeout = timeout
+
+    def get_date(self, key: str) -> Mapping[str, Any]:
+        url = f"{self.base_url}/Calendar/Date/{quote(key, safe='')}"
+        try:
+            response = requests.get(url, timeout=self.timeout)
+            response.raise_for_status()
+            data = response.json()
+        except requests.exceptions.Timeout as exc:
+            raise EraConversionError(f"cnkgraph Calendar API 请求超时: {key}") from exc
+        except requests.exceptions.RequestException as exc:
+            raise EraConversionError(f"cnkgraph Calendar API 请求失败: {exc}") from exc
+        except ValueError as exc:
+            raise EraConversionError("cnkgraph Calendar API 返回了非 JSON 响应") from exc
+        if not isinstance(data, Mapping):
+            raise EraConversionError("cnkgraph Calendar API 返回结构异常")
+        return data
 
 
 def chinese_number_to_int(text: str) -> int:
@@ -105,38 +104,8 @@ def chinese_number_to_int(text: str) -> int:
     return total
 
 
-def _entry_aliases(entry: Mapping[str, Any]) -> List[str]:
-    aliases: List[str] = []
-    for title in entry.get("reignTitles") or []:
-        if title and title not in aliases:
-            aliases.append(str(title))
-    title = str(entry.get("reignTitle") or "").strip()
-    for part in title.replace("；", ";").split(";"):
-        part = part.strip()
-        if part and part != "NON" and part not in aliases:
-            aliases.append(part)
-    if not aliases:
-        dynasty = str(entry.get("dynasty") or "").strip()
-        if dynasty:
-            aliases.append(dynasty)
-    return aliases
-
-
-def _format_gregorian(year: int) -> str:
-    if year < 0:
-        return f"公元前{abs(year)}年"
-    return f"公元{year}年"
-
-
-def _entry_bounds(entry: Mapping[str, Any]) -> Tuple[Any, Any, Optional[Mapping[str, Any]]]:
-    correction = KNOWN_BOUNDARY_CORRECTIONS.get(str(entry.get("uri") or ""))
-    if correction:
-        return correction.get("begin"), correction.get("end"), correction
-    return entry.get("begin"), entry.get("end"), None
-
-
-def parse_era_expression(expression: str) -> Tuple[Optional[str], str, int]:
-    """Return optional dynasty filter, era title, and year sequence."""
+def parse_era_expression(expression: str) -> Tuple[Optional[str], str, int, str, str]:
+    """Return optional dynasty filter, era title, year sequence, source number text, and unit."""
     query = expression.strip()
     if not query:
         raise EraConversionError("输入为空")
@@ -153,121 +122,184 @@ def parse_era_expression(expression: str) -> Tuple[Optional[str], str, int]:
     if not match:
         raise EraConversionError(f"无法识别年号纪年: {expression!r}")
     era = match.group("era").strip()
-    year_number = chinese_number_to_int(match.group("number"))
-    return dynasty_filter, era, year_number
+    number_text = match.group("number")
+    unit = match.group("unit")
+    year_number = chinese_number_to_int(number_text)
+    return dynasty_filter, era, year_number, number_text, unit
 
 
-def _matches_dynasty(entry: Mapping[str, Any], dynasty: Optional[str]) -> bool:
+def _format_gregorian(year: int) -> str:
+    if year < 0:
+        return f"公元前{abs(year)}年"
+    return f"公元{year}年"
+
+
+def _parse_gregorian_year(value: Any) -> Optional[int]:
+    if value is None:
+        return None
+    text = str(value).strip()
+    match = re.search(r"-?\d+", text)
+    if not match:
+        return None
+    year = int(match.group(0))
+    if "前" in text and year > 0:
+        return -year
+    return year
+
+
+def _matches_dynasty(text: str, dynasty: Optional[str]) -> bool:
     if not dynasty:
         return True
-    return dynasty in str(entry.get("dynasty") or "")
+    return dynasty in text or text in dynasty
+
+
+def _matches_era(api_name: Any, primary_era: str, parsed_era: str) -> bool:
+    name = str(api_name or "").strip()
+    return bool(name) and (name == primary_era or name == parsed_era or name in parsed_era)
+
+
+def _iter_relevant_eras(
+    data: Mapping[str, Any],
+    primary_era: str,
+    parsed_era: str,
+    dynasty_filter: Optional[str],
+) -> Iterable[Dict[str, Any]]:
+    for group in data.get("EraYears") or []:
+        if not isinstance(group, Mapping):
+            continue
+        dynasty = str(group.get("Dynasty") or "")
+        if dynasty_filter and not _matches_dynasty(dynasty, dynasty_filter):
+            continue
+        for king in group.get("Kings") or []:
+            if not isinstance(king, Mapping):
+                continue
+            for era in king.get("EraYears") or []:
+                if not isinstance(era, Mapping) or not _matches_era(era.get("Name"), primary_era, parsed_era):
+                    continue
+                yield {
+                    "dynasty": dynasty,
+                    "king": king,
+                    "era": era,
+                }
+
+
+def _build_api_key(expression: str, dynasty_filter: Optional[str], parsed_dynasty: Optional[str]) -> str:
+    compact = "".join(expression.strip().split())
+    if dynasty_filter and dynasty_filter != parsed_dynasty:
+        return f"{dynasty_filter}{compact}"
+    return compact
 
 
 def convert_era_expression(
     expression: str,
     dynasty: Optional[str] = None,
-    index: Optional[Sequence[Mapping[str, Any]]] = None,
+    api_client: Optional[CalendarClient] = None,
 ) -> Dict[str, Any]:
-    """Convert one reign-year expression, returning structured matches and errors."""
-    parsed_dynasty, era, year_number = parse_era_expression(expression)
+    """Convert one reign-year expression via cnkgraph, returning structured matches and errors."""
+    parsed_dynasty, parsed_era, year_number, number_text, unit = parse_era_expression(expression)
     dynasty_filter = dynasty or parsed_dynasty
-    entries = index if index is not None else load_index()
+    api_key = _build_api_key(expression, dynasty_filter, parsed_dynasty)
+    client = api_client or CnkgraphCalendarClient()
 
     result: Dict[str, Any] = {
         "query": expression,
         "dynasty_filter": dynasty_filter,
-        "era": era,
+        "era": parsed_era,
         "year_number": year_number,
+        "api_query": api_key,
+        "api_endpoint": f"{API_BASE_URL}/Calendar/Date/{quote(api_key, safe='')}",
         "matches": [],
         "errors": [],
     }
 
-    candidates = [
-        entry
-        for entry in entries
-        if _matches_dynasty(entry, dynasty_filter) and era in _entry_aliases(entry)
-    ]
-    if not candidates:
-        result["errors"].append(f"未在本地年表索引中找到年号/纪年名: {era}")
+    data = client.get_date(api_key)
+    date_info = data.get("Date") if isinstance(data.get("Date"), Mapping) else {}
+    gregorian_year = _parse_gregorian_year(date_info.get("Year"))
+    if gregorian_year is None:
+        result["errors"].append(f"cnkgraph 未能把 {expression} 解析为公元年份")
         return result
 
-    for entry in candidates:
-        begin, end, correction = _entry_bounds(entry)
-        if not isinstance(begin, int):
-            result["errors"].append(f"{era} 的开始年份无效: {entry.get('uri')}")
-            continue
-        gregorian_year = begin + year_number - 1
-        if isinstance(end, int) and gregorian_year > end:
-            result["errors"].append(
-                f"{entry.get('dynasty')}{entry.get('reignTitle') or entry.get('dynasty')}止于{_format_gregorian(end)}，"
-                f"{expression}超出范围。"
-            )
-            continue
+    primary_era = str(date_info.get("EraName") or parsed_era).strip()
+    result["era"] = primary_era or parsed_era
+    result["year_ganzhi"] = date_info.get("YearGanZhi")
+    result["links_count"] = (data.get("Links") or {}).get("Count") if isinstance(data.get("Links"), Mapping) else None
+
+    for item in _iter_relevant_eras(data, primary_era or parsed_era, parsed_era, dynasty_filter):
+        king = item["king"]
+        era = item["era"]
         result["matches"].append(
             {
-                "expression": f"{era}{'元' if year_number == 1 else year_number}年",
+                "expression": f"{primary_era or parsed_era}{number_text}{unit}",
                 "gregorian_year": gregorian_year,
                 "gregorian_label": _format_gregorian(gregorian_year),
-                "dynasty": entry.get("dynasty") or "",
-                "reignTitle": entry.get("reignTitle") or "",
-                "monarch": entry.get("monarch") or "",
-                "monarchName": entry.get("monarchName") or "",
-                "begin": begin,
-                "end": end,
-                "uri": entry.get("uri") or "",
+                "dynasty": item["dynasty"],
+                "reignTitle": era.get("Name") or "",
+                "monarch": king.get("Name") or "",
+                "monarchName": king.get("Name") or "",
+                "begin": era.get("BeginYear") or "",
+                "end": era.get("EndYear") or "",
+                "eraId": era.get("Id"),
+                "kingId": king.get("Id"),
+                "calculatedYear": era.get("CalculatedYear") or "",
+                "comment": era.get("Comment") or "",
+                "source_api": "open.cnkgraph.com Calendar API",
             }
         )
-        if correction:
-            result["matches"][-1].update(
-                {
-                    "corrected_boundary": True,
-                    "source_begin": entry.get("begin"),
-                    "source_end": entry.get("end"),
-                    "correction_note": correction.get("note", ""),
-                }
-            )
+
+    if not result["matches"]:
+        result["matches"].append(
+            {
+                "expression": f"{primary_era or parsed_era}{number_text}{unit}",
+                "gregorian_year": gregorian_year,
+                "gregorian_label": _format_gregorian(gregorian_year),
+                "dynasty": "",
+                "reignTitle": primary_era or parsed_era,
+                "monarch": "",
+                "monarchName": "",
+                "begin": "",
+                "end": "",
+                "source_api": "open.cnkgraph.com Calendar API",
+            }
+        )
     return result
 
 
-def scan_text(text: str, index: Optional[Sequence[Mapping[str, Any]]] = None) -> List[Dict[str, Any]]:
+def scan_text(text: str, api_client: Optional[CalendarClient] = None) -> List[Dict[str, Any]]:
     """Find and convert recognizable reign-year expressions in arbitrary text."""
-    entries = index if index is not None else load_index()
-    aliases = sorted({alias for entry in entries for alias in _entry_aliases(entry)}, key=len, reverse=True)
     found: List[Dict[str, Any]] = []
     seen = set()
-    for alias in aliases:
-        if not alias:
+    for match in SCAN_PATTERN.finditer(text):
+        expression = match.group(0)
+        if expression.startswith(("公元", "西元")):
             continue
-        pattern = re.compile(re.escape(alias) + r"(元|[零〇一二两三四五六七八九十百千\d]+)(年|载)")
-        for match in pattern.finditer(text):
-            expression = match.group(0)
-            key = (match.start(), expression)
-            if key in seen:
-                continue
-            seen.add(key)
-            converted = convert_era_expression(expression, index=entries)
-            converted["start"] = match.start()
-            converted["end"] = match.end()
-            found.append(converted)
-    return sorted(found, key=lambda item: item["start"])
+        key = (match.start(), expression)
+        if key in seen:
+            continue
+        seen.add(key)
+        try:
+            converted = convert_era_expression(expression, api_client=api_client)
+        except EraConversionError:
+            continue
+        converted["start"] = match.start()
+        converted["end"] = match.end()
+        found.append(converted)
+    return found
 
 
 def _print_human(result: Mapping[str, Any]) -> None:
     print(f"查询：{result['query']}")
     if result.get("dynasty_filter"):
-        print(f"朝代限定：{result['dynasty_filter']}")
+        print(f"朝代/政权限定：{result['dynasty_filter']}")
 
     matches = result.get("matches") or []
     if matches:
         print("\n换算结果：")
         for item in matches:
-            reign = item.get("reignTitle") or item.get("dynasty")
-            monarch_bits = " ".join(bit for bit in [item.get("monarch"), item.get("monarchName")] if bit)
-            monarch_text = f"，{monarch_bits}" if monarch_bits else ""
-            print(
-                f"- {item.get('dynasty')}{reign}{result['year_number']}年"
-                f"{monarch_text}：{item['gregorian_label']}"
-            )
+            reign = item.get("reignTitle") or result.get("era")
+            monarch_text = f"，{item.get('monarch')}" if item.get("monarch") else ""
+            dynasty_text = item.get("dynasty") or ""
+            calculated = f"（{item.get('calculatedYear')}）" if item.get("calculatedYear") else ""
+            print(f"- {dynasty_text}{reign}{calculated}{monarch_text}：{item['gregorian_label']}")
 
     errors = result.get("errors") or []
     if errors:
@@ -278,18 +310,18 @@ def _print_human(result: Mapping[str, Any]) -> None:
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description="Convert Chinese reign-year expressions to Gregorian years."
+        description="Convert Chinese reign-year expressions to Gregorian years through cnkgraph."
     )
-    parser.add_argument("expression", help='Year expression, e.g. "天宝三载" or "唐 天宝三载".')
-    parser.add_argument("--dynasty", help="Optional dynasty filter, e.g. 唐.")
+    parser.add_argument("expression", help='Year expression, e.g. "天宝十四载" or "唐 天宝三载".')
+    parser.add_argument("--dynasty", help="Optional dynasty or regime filter, e.g. 唐, 吴越, 后唐.")
     parser.add_argument("--json", action="store_true", help="Print structured JSON.")
     args = parser.parse_args()
 
     try:
         result = convert_era_expression(args.expression, dynasty=args.dynasty)
-    except (DynastyDataError, EraConversionError) as exc:
+    except EraConversionError as exc:
         if args.json:
-            print(json.dumps({"error": str(exc), "index_path": str(INDEX_PATH)}, ensure_ascii=False, indent=2))
+            print(json.dumps({"error": str(exc)}, ensure_ascii=False, indent=2))
         else:
             print(f"换算失败: {exc}")
         return 1
