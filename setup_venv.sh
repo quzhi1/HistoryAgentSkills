@@ -66,6 +66,12 @@ if python -c "import requests" 2> /dev/null; then
 else
     echo "❌ requests 安装失败"
 fi
+
+if python -c "import cnmaps_data" 2> /dev/null; then
+    echo "✓ cnmaps-data 已安装"
+else
+    echo "❌ cnmaps-data 安装失败"
+fi
 echo ""
 
 # 完成

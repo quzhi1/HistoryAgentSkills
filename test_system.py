@@ -29,6 +29,13 @@ def test_imports() -> bool:
         ok = False
 
     try:
+        import cnmaps_data  # noqa: F401
+        print("✓ cnmaps-data 已安装")
+    except ImportError:
+        print("✗ cnmaps-data 未安装，请运行: ./setup_venv.sh")
+        ok = False
+
+    try:
         con = sqlite3.connect(":memory:")
         con.execute("CREATE VIRTUAL TABLE t USING fts5(x, tokenize='trigram')")
         print("✓ SQLite FTS5 trigram 可用")
@@ -60,6 +67,7 @@ def test_files() -> bool:
         "scripts/history_query.py",
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
+        "scripts/place_resolver.py",
         "SKILL.md",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
@@ -97,6 +105,7 @@ def test_scripts_compile() -> bool:
         "scripts/history_query.py",
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
+        "scripts/place_resolver.py",
     ]
     result = subprocess.run(
         [str(ROOT / "venv" / "bin" / "python"), "-m", "py_compile", *scripts],
@@ -255,6 +264,170 @@ def test_epub_search() -> bool:
     return False
 
 
+class FakeTgazPlaceClient:
+    """Offline fixture for CHGIS/TGAZ placename tests."""
+
+    def __init__(self):
+        self.search_payloads = {
+            "古城": [_tgaz_payload("hvd_1", "古城", 700, 800)],
+            "同名": [
+                _tgaz_payload("hvd_2", "同名", 700, 800, 2, 2),
+                _tgaz_payload("hvd_3", "同名", 900, 1000, 7, 7),
+            ],
+            "两城": [
+                _tgaz_payload("hvd_4", "两城", 700, 800, 2, 2),
+                _tgaz_payload("hvd_5", "两城", 700, 800, 4, 4),
+            ],
+            "无坐标": [_tgaz_payload("hvd_6", "无坐标", 700, 800)],
+            "海外": [_tgaz_payload("hvd_7", "海外", 700, 800, 20, 20)],
+            "省内": [_tgaz_payload("hvd_8", "省内", 700, 800, 9, 9)],
+        }
+        self.detail_payloads = {
+            "hvd_1": _tgaz_payload("hvd_1", "古城", 700, 800, 2, 2),
+        }
+
+    def search(self, name: str, year: int | None = None, feature_type: str | None = None):
+        return self.search_payloads.get(name, [])
+
+    def get_by_id(self, sys_id: str):
+        return self.detail_payloads.get(sys_id, {})
+
+
+def _tgaz_payload(
+    sys_id: str,
+    name: str,
+    begin: int,
+    end: int,
+    lon: float | None = None,
+    lat: float | None = None,
+):
+    payload = {
+        "sys_id": sys_id,
+        "spellings": [{"simplified Chinese": name}, {"transcribed in Pinyin": f"{name} Pinyin"}],
+        "feature_type": {"name": "县", "English": "county"},
+        "temporal": {"begin year": str(begin), "end year": str(end)},
+        "historical_context": {"part of": [{"name": "测试州"}]},
+        "data source": "CHGIS",
+    }
+    if lon is not None and lat is not None:
+        payload["spatial"] = {"longitude": str(lon), "latitude": str(lat)}
+    return payload
+
+
+def _square(min_x: float, min_y: float, max_x: float, max_y: float):
+    return {
+        "type": "Polygon",
+        "coordinates": [
+            [
+                [min_x, min_y],
+                [max_x, min_y],
+                [max_x, max_y],
+                [min_x, max_y],
+                [min_x, min_y],
+            ]
+        ],
+    }
+
+
+def test_place_resolver() -> bool:
+    """Test historical placename to modern administration resolution offline."""
+    print("\n测试6: 古地名现代行政区划映射...")
+    from place_resolver import BoundaryRecord, ModernBoundaryResolver, resolve_place
+
+    boundary_resolver = ModernBoundaryResolver(
+        [
+            BoundaryRecord(
+                name="测试省",
+                level="省",
+                province="测试省",
+                adcode="100000",
+                source="fixture",
+                geometry=_square(0, 0, 10, 10),
+            ),
+            BoundaryRecord(
+                name="测试市",
+                level="市",
+                province="测试省",
+                city="测试市",
+                adcode="100100",
+                source="fixture",
+                geometry=_square(0, 0, 8, 8),
+            ),
+            BoundaryRecord(
+                name="测试县",
+                level="区县",
+                province="测试省",
+                city="测试市",
+                district="测试县",
+                adcode="100101",
+                source="fixture",
+                geometry=_square(1, 1, 5, 5),
+            ),
+        ]
+    )
+    client = FakeTgazPlaceClient()
+    ok = True
+
+    resolved = resolve_place("古城", year=750, tgaz_client=client, boundary_resolver=boundary_resolver)
+    if resolved["status"] == "resolved" and resolved["modern_administration"]["district"] == "测试县":
+        print("✓ TGAZ 详情坐标 + 县级现代边界反查通过")
+    else:
+        print(f"✗ 精确地名解析失败: {resolved}")
+        ok = False
+
+    active = resolve_place("同名", year=750, tgaz_client=client, boundary_resolver=boundary_resolver)
+    if active["status"] == "resolved" and active["best_match"]["id"] == "hvd_2":
+        print("✓ 年份过滤会排除非活动候选")
+    else:
+        print(f"✗ 年份过滤失败: {active}")
+        ok = False
+
+    ambiguous = resolve_place("两城", year=750, tgaz_client=client, boundary_resolver=boundary_resolver)
+    if ambiguous["status"] == "ambiguous" and len(ambiguous["candidates"]) == 2:
+        print("✓ 多候选歧义会保留候选列表")
+    else:
+        print(f"✗ 歧义处理失败: {ambiguous}")
+        ok = False
+
+    no_coordinate = resolve_place("无坐标", year=750, tgaz_client=client, boundary_resolver=boundary_resolver)
+    if no_coordinate["status"] == "no_coordinate":
+        print("✓ 无坐标候选返回 no_coordinate")
+    else:
+        print(f"✗ 无坐标处理失败: {no_coordinate}")
+        ok = False
+
+    out_of_range = resolve_place("古城", year=2000, tgaz_client=client, boundary_resolver=boundary_resolver)
+    if out_of_range["status"] == "out_of_range":
+        print("✓ 超出 TGAZ 年份范围返回 out_of_range")
+    else:
+        print(f"✗ 年份范围校验失败: {out_of_range}")
+        ok = False
+
+    outside = resolve_place("海外", year=750, tgaz_client=client, boundary_resolver=boundary_resolver)
+    if outside["status"] == "resolved" and outside["modern_administration"] is None:
+        print("✓ 坐标在现代边界外时不编造行政区划")
+    else:
+        print(f"✗ 边界外处理失败: {outside}")
+        ok = False
+
+    province_only = resolve_place("省内", year=750, tgaz_client=client, boundary_resolver=boundary_resolver)
+    admin = province_only.get("modern_administration") or {}
+    if province_only["status"] == "resolved" and admin.get("province") == "测试省" and admin.get("city") is None:
+        print("✓ 只命中上级边界时只输出可确认层级")
+    else:
+        print(f"✗ 上级边界处理失败: {province_only}")
+        ok = False
+
+    required_keys = {"query", "status", "best_match", "candidates", "modern_administration", "note"}
+    if required_keys.issubset(resolved):
+        print("✓ JSON 输出顶层字段稳定")
+    else:
+        print(f"✗ JSON 输出字段缺失: {resolved.keys()}")
+        ok = False
+
+    return ok
+
+
 def main() -> int:
     os.chdir(ROOT)
     print("=" * 60)
@@ -267,6 +440,7 @@ def main() -> int:
         ("脚本语法", test_scripts_compile),
         ("年号换算", test_dynasty_converter),
         ("EPUB检索", test_epub_search),
+        ("古地名映射", test_place_resolver),
     ]
 
     results = []

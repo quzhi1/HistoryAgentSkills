@@ -13,6 +13,7 @@
 | 《中国历史大辞典4合1》 | 本地 MDX 文件（约 4GB） | 权威定义、史料出处线索 |
 | cnkgraph 古籍 API | HTTP 接口 [open.cnkgraph.com](https://open.cnkgraph.com/swagger) | 古籍原文片段、诗词、人物、书目、年号纪年换算 |
 | 史料学 EPUB | `books/` 本地 EPUB + SQLite FTS 缓存 | 搜集史料前判断检索方向 |
+| CHGIS/TGAZ + `cnmaps-data` | TGAZ HTTP API + 本地现代行政区边界 | 古地名坐标查询与现代省/市/区县反查 |
 
 辞典文件需自行获取放到 `dict/历史辞典4合1.mdx`。cnkgraph API 仅限非商业用途。
 
@@ -27,7 +28,7 @@ cd /Users/zhi.q/HistoryAgentSkills
 ./setup_venv.sh
 ```
 
-脚本会建 venv、装依赖（`mdict-utils` + `requests`）、跑一次自检。完成后 `venv/bin/mdict` 和 `venv/bin/python` 即可直接调用，**不需要** `source venv/bin/activate`。
+脚本会建 venv、装依赖（`mdict-utils` + `requests` + `cnmaps-data`）、跑一次自检。完成后 `venv/bin/mdict` 和 `venv/bin/python` 即可直接调用，**不需要** `source venv/bin/activate`。
 
 ### 二、全局注册到 Claude Code（推荐）
 
@@ -58,7 +59,7 @@ cd /Users/zhi.q/HistoryAgentSkills
 ```
 
 Claude Code 识别为中国历史问题后会自动触发本 skill，按 `SKILL.md` 工作流答题：查辞典 → 查 cnkgraph 古籍片段 → 标书名+章节名 → 补全六类细节（时间、地点、相关人物、起因、经过、结果）。
-若材料中出现年号纪年，会通过 cnkgraph Calendar API 换算为公元纪年；搜集史料前可先检索本地史料学 EPUB 判断方向。
+若材料中出现年号纪年，会通过 cnkgraph Calendar API 换算为公元纪年；若出现古地名，会通过 CHGIS/TGAZ + 现代边界库查询今地，并在最终回答中自然括注，如“深州乐寿（今河北省沧州市献县）”；搜集史料前可先检索本地史料学 EPUB 判断方向。
 
 ### 方式 2：`/history` 斜杠命令
 
@@ -90,6 +91,10 @@ venv/bin/python scripts/history_query.py "李白"
 # 年号纪年换算
 venv/bin/python scripts/dynasty_converter.py "天宝十四载"
 venv/bin/python scripts/dynasty_converter.py "唐 天宝三载" --json
+
+# 古地名今地映射（TGAZ 坐标 + 现代行政边界反查）
+venv/bin/python scripts/place_resolver.py "顺天府" --year 1800
+venv/bin/python scripts/place_resolver.py "长安" --year 755 --json
 
 # 检索本地史料学 EPUB（只作搜集方向参考）
 venv/bin/python scripts/book_search.py "甲骨文" --limit 5
@@ -138,6 +143,7 @@ HistoryAgentSkills/
 ├── scripts/
 │   ├── history_query.py            # 综合查询脚本（史料方向 + 年号 + 辞典 + API）
 │   ├── dynasty_converter.py        # 通过 cnkgraph Calendar API 换算年号纪年
+│   ├── place_resolver.py           # CHGIS/TGAZ 古地名今地映射
 │   └── book_search.py              # EPUB 全文检索器
 │
 ├── HISTORICAL_SOURCES_GUIDE.md     # 二十四史引用指南
@@ -153,8 +159,9 @@ HistoryAgentSkills/
 2. **史料引用必须包含书名 + 章节名**：✅《魏书》卷三五《崔浩传》｜❌《魏书》记载｜❌ 据史书记载
 3. **必须补全六类细节**：时间、地点、相关人物、起因、经过、结果
 4. **年号纪年必须换算**：如天宝十四载 → 天宝十四载（公元755年）
-5. **EPUB 只作方向**：本地史料学书籍可帮助推断应查哪些史料，但不能替代辞典与古籍原文
-6. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
+5. **古地名必须标注今地**：如出现顺天府、晋阳等古地名，查 CHGIS/TGAZ 并用现代边界反查；最终回答用自然括注，如“深州乐寿（今河北省沧州市献县）”，不输出内部技术依据，不等同古今辖境
+6. **EPUB 只作方向**：本地史料学书籍可帮助推断应查哪些史料，但不能替代辞典与古籍原文
+7. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
 
 详细的反例与正例见 [COMMON_MISTAKES.md](COMMON_MISTAKES.md)。
 
@@ -182,6 +189,7 @@ HistoryAgentSkills/
 - ❌ 不要用 Read 工具直接读 `dict/历史辞典4合1.mdx`（约 4GB，会撑爆上下文），只能通过 `mdict -q` 查询
 - ❌ 不要在 Claude Code 触发的命令里用 `source venv/bin/activate`——会被权限系统拦截，每次按回车确认。改用 `venv/bin/python` / `venv/bin/mdict` 直调
 - ✅ 关键词控制 2–6 字，超过 8 字 cnkgraph 常 404；复杂问题用多次短查询交叉验证
+- ✅ 古地名今地映射使用 `scripts/place_resolver.py`；如果返回歧义、无坐标或无边界命中，必须用自然语言如实说明，不输出脚本状态码或内部实现细节
 - ✅ 修改任何核心规则前，先看 [COMMON_MISTAKES.md](COMMON_MISTAKES.md) 历史踩坑
 
 ---
