@@ -41,6 +41,33 @@ class EraConversionError(ValueError):
     """Raised when an era-year expression cannot be parsed or converted."""
 
 
+class EraAmbiguityError(EraConversionError):
+    """Raised when the API reports multiple matching era-year candidates (HTTP 400).
+
+    The ``candidates`` attribute holds the raw candidate list parsed from the
+    API error message, e.g. ['高句丽永乐三年', '明朝永乐三年'].
+    """
+
+    def __init__(self, message: str, candidates: List[str]) -> None:
+        super().__init__(message)
+        self.candidates: List[str] = candidates
+
+
+# Pattern used to extract candidate dynasty–era strings from the API's 400 body,
+# e.g. "输入"永乐三年"中含有多种可能年号信息：高句丽永乐三年、明朝永乐三年"
+_AMBIGUITY_BODY_PATTERN = re.compile(r"多种可能年号信息[：:]\s*(.+)")
+
+
+def _parse_ambiguity_candidates(body: str) -> List[str]:
+    """Extract candidate strings from an ambiguity error body."""
+    m = _AMBIGUITY_BODY_PATTERN.search(body)
+    if not m:
+        return []
+    raw = m.group(1).strip()
+    # Candidates are separated by '、' or ',' or ';'
+    return [c.strip() for c in re.split(r"[、,，；;]", raw) if c.strip()]
+
+
 class CalendarClient(Protocol):
     """Small protocol for tests and alternate API clients."""
 
@@ -59,10 +86,26 @@ class CnkgraphCalendarClient:
         url = f"{self.base_url}/Calendar/Date/{quote(key, safe='')}"
         try:
             response = requests.get(url, timeout=self.timeout)
-            response.raise_for_status()
-            data = response.json()
         except requests.exceptions.Timeout as exc:
             raise EraConversionError(f"cnkgraph Calendar API 请求超时: {key}") from exc
+        except requests.exceptions.RequestException as exc:
+            raise EraConversionError(f"cnkgraph Calendar API 请求失败: {exc}") from exc
+
+        if response.status_code == 400:
+            # The API returns a plain-text disambiguation message on 400.
+            body = response.text.strip()
+            candidates = _parse_ambiguity_candidates(body)
+            if candidates:
+                cand_str = "、".join(candidates)
+                raise EraAmbiguityError(
+                    f'年号”{key}”存在歧义，候选：{cand_str}',
+                    candidates=candidates,
+                )
+            raise EraConversionError(f"cnkgraph Calendar API 拒绝请求 (400): {body or key}")
+
+        try:
+            response.raise_for_status()
+            data = response.json()
         except requests.exceptions.RequestException as exc:
             raise EraConversionError(f"cnkgraph Calendar API 请求失败: {exc}") from exc
         except ValueError as exc:
@@ -190,6 +233,51 @@ def _build_api_key(expression: str, dynasty_filter: Optional[str], parsed_dynast
     return compact
 
 
+def _resolve_ambiguity_with_dynasty(
+    ambiguity_err: "EraAmbiguityError",
+    dynasty_filter: Optional[str],
+    parsed_era: str,
+    number_text: str,
+    unit: str,
+    client: "CalendarClient",
+) -> Optional[Mapping[str, Any]]:
+    """Try to resolve an ambiguity error by prepending a dynasty hint to the era key.
+
+    Returns the successful API response, or None if resolution fails.
+    The caller is responsible for handling the None case.
+    """
+    # Only attempt auto-resolution when a dynasty hint is available.
+    # Without one we cannot know which candidate to pick, so we return None
+    # and let the caller surface the ambiguity to the user.
+    if not dynasty_filter:
+        return None
+
+    candidates = ambiguity_err.candidates
+    era_unit = f"{parsed_era}{number_text}{unit}"
+    prefixes: List[str] = []
+
+    # First try the user-supplied dynasty_filter directly.
+    prefixes.append(dynasty_filter)
+
+    # Then try any candidate whose extracted dynasty prefix matches dynasty_filter.
+    for cand in candidates:
+        if cand.endswith(era_unit):
+            prefix = cand[: -len(era_unit)]
+        else:
+            prefix = cand
+        if prefix and prefix not in prefixes and (dynasty_filter in prefix or prefix in dynasty_filter):
+            prefixes.append(prefix)
+
+    era_key = f"{parsed_era}{number_text}{unit}"
+    for prefix in prefixes:
+        retry_key = f"{prefix}{era_key}"
+        try:
+            return client.get_date(retry_key)
+        except EraConversionError:
+            continue
+    return None
+
+
 def convert_era_expression(
     expression: str,
     dynasty: Optional[str] = None,
@@ -212,7 +300,24 @@ def convert_era_expression(
         "errors": [],
     }
 
-    data = client.get_date(api_key)
+    try:
+        data = client.get_date(api_key)
+    except EraAmbiguityError as amb:
+        # The API returned 400 with an ambiguity message. Attempt automatic
+        # resolution by prepending a dynasty prefix to the era key.
+        resolved = _resolve_ambiguity_with_dynasty(
+            amb, dynasty_filter, parsed_era, number_text, unit, client
+        )
+        if resolved is not None:
+            data = resolved
+        else:
+            # Could not resolve — surface the candidates so the user can pick.
+            cand_str = "、".join(amb.candidates)
+            result["errors"].append(
+                f'年号“{parsed_era}”存在歧义，请在年号前加朝代前缀后重试。'
+                f' 候选：{cand_str}'
+            )
+            return result
     date_info = data.get("Date") if isinstance(data.get("Date"), Mapping) else {}
     gregorian_year = _parse_gregorian_year(date_info.get("Year"))
     if gregorian_year is None:

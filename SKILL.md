@@ -117,12 +117,14 @@ venv/bin/python scripts/book_search.py "关键词" --limit 5
 cd /Users/zhi.q/HistoryAgentSkills
 venv/bin/python scripts/dynasty_converter.py "天宝十四载"
 venv/bin/python scripts/dynasty_converter.py "唐 天宝三载"
+# 若脚本报"年号X存在歧义"，在年号前加朝代名重试：
+venv/bin/python scripts/dynasty_converter.py "明 永乐十五年"
 ```
 
 - 换算脚本调用 open.cnkgraph.com 的 Calendar API；不要在每次历史回答中重复输出 API 来源说明。
 - 换算只精确到年份，不推断月份、日期或改元日。
 - 最终回答必须保留材料中的原年号，再加括号标公元年，例如 `后梁开平元年（907）`；不得把年号叙事改写成只有 `907 年`。
-- 如果 API 返回同名年号或多政权候选，按上下文选择；不能选择时必须说明存在歧义。
+- **年号歧义处理**：若脚本输出"提示：年号X存在歧义，候选：…"（exit 1），说明同名年号跨多政权；在年号前加朝代名（空格分隔）重试，如 `"明 永乐十五年"`；脚本会自动选择匹配朝代的候选并换算。若上下文无法确定朝代，在回答中说明歧义并列出候选。
 
 ### 步骤2：查询历史辞典
 
