@@ -180,16 +180,20 @@ class TgazHttpClient:
         return self._get_json(f"{self.base_url}/placename/json/{sys_id}", params=None)
 
     def _get_json(self, url: str, params: Optional[Mapping[str, Any]]) -> Any:
-        try:
-            response = requests.get(url, params=params, timeout=self.timeout)
-            response.raise_for_status()
-            return json.loads(response.text, strict=False)
-        except requests.exceptions.Timeout as exc:
-            raise PlaceResolverError("TGAZ 查询超时") from exc
-        except requests.exceptions.RequestException as exc:
-            raise PlaceResolverError(f"TGAZ 查询失败: {exc}") from exc
-        except ValueError as exc:
-            raise PlaceResolverError("TGAZ 返回了非 JSON 响应") from exc
+        max_attempts = 3
+        for attempt in range(1, max_attempts + 1):
+            try:
+                response = requests.get(url, params=params, timeout=self.timeout)
+                response.raise_for_status()
+                return json.loads(response.text, strict=False)
+            except requests.exceptions.Timeout:
+                if attempt < max_attempts:
+                    continue
+                raise PlaceResolverError("TGAZ 查询超时") from None
+            except requests.exceptions.RequestException as exc:
+                raise PlaceResolverError(f"TGAZ 查询失败: {exc}") from exc
+            except ValueError as exc:
+                raise PlaceResolverError("TGAZ 返回了非 JSON 响应") from exc
 
 
 class ModernBoundaryResolver:

@@ -99,6 +99,10 @@ def find_book_passages(keyword: str, page_no: int = 0, book_ids: Optional[List[s
             timeout=TIMEOUT,
             headers={"Content-Type": "application/json; charset=utf-8"},
         )
+        if response.status_code == 404:
+            # API 在关键词无结果时返回 404，而非空列表
+            return {"Count": 0, "PageSize": 100, "Key": keyword, "PageNo": page_no,
+                    "Notification": None, "Summary": [], "Result": [], "Error": None}
         response.raise_for_status()
         return response.json()
     except requests.exceptions.Timeout:
