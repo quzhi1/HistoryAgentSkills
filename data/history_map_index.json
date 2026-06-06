@@ -1,0 +1,2733 @@
+{
+  "source": "https://history-map.osgeo.cn",
+  "generated_from": "/assets/xx_all_html_data.fd5b73f1.js",
+  "entries": [
+    {
+      "page": "page01",
+      "period": "史前",
+      "path": "/page01/html",
+      "ch": "ch01_primitive-society",
+      "sec": "sec01_primitive-society",
+      "label": "原始社会遗址历史地图",
+      "url": "https://history-map.osgeo.cn/#/page01/html?ch=ch01_primitive-society&sec=sec01_primitive-society"
+    },
+    {
+      "page": "page01",
+      "period": "史前",
+      "path": "/page01/html",
+      "ch": "ch01_primitive-society",
+      "sec": "sec02_paleolith",
+      "label": "原始社会早期遗址（旧石器时代）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page01/html?ch=ch01_primitive-society&sec=sec02_paleolith"
+    },
+    {
+      "page": "page01",
+      "period": "史前",
+      "path": "/page01/html",
+      "ch": "ch01_primitive-society",
+      "sec": "sec03_neolith",
+      "label": "黄河流域原始社会晚期遗址（新石器时代）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page01/html?ch=ch01_primitive-society&sec=sec03_neolith"
+    },
+    {
+      "page": "page02",
+      "period": "夏",
+      "path": "/page02/html",
+      "ch": "ch02_xia",
+      "sec": "sec01_xia",
+      "label": "夏朝时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page02/html?ch=ch02_xia&sec=sec01_xia"
+    },
+    {
+      "page": "page03",
+      "period": "商",
+      "path": "/page03/html",
+      "ch": "ch03_shang",
+      "sec": "sec01_shang",
+      "label": "商朝时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page03/html?ch=ch03_shang&sec=sec01_shang"
+    },
+    {
+      "page": "page03",
+      "period": "商",
+      "path": "/page03/html",
+      "ch": "ch03_shang",
+      "sec": "sec02_center",
+      "label": "商朝时期中心区域历史地图",
+      "url": "https://history-map.osgeo.cn/#/page03/html?ch=ch03_shang&sec=sec02_center"
+    },
+    {
+      "page": "page04",
+      "period": "西周",
+      "path": "/page04/html",
+      "ch": "ch04_xizhou",
+      "sec": "sec01_xizhou",
+      "label": "西周时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page04/html?ch=ch04_xizhou&sec=sec01_xizhou"
+    },
+    {
+      "page": "page04",
+      "period": "西周",
+      "path": "/page04/html",
+      "ch": "ch04_xizhou",
+      "sec": "sec02_zongzhou",
+      "label": "西周时期宗周、成周附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page04/html?ch=ch04_xizhou&sec=sec02_zongzhou"
+    },
+    {
+      "page": "page04",
+      "period": "西周",
+      "path": "/page04/html",
+      "ch": "ch04_xizhou",
+      "sec": "sec03_center",
+      "label": "西周时期中心区域历史地图",
+      "url": "https://history-map.osgeo.cn/#/page04/html?ch=ch04_xizhou&sec=sec03_center"
+    },
+    {
+      "page": "page05",
+      "period": "春秋",
+      "path": "/page05/html",
+      "ch": "ch05_chunqiu",
+      "sec": "sec01_chunqiu",
+      "label": "春秋时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page05/html?ch=ch05_chunqiu&sec=sec01_chunqiu"
+    },
+    {
+      "page": "page05",
+      "period": "春秋",
+      "path": "/page05/html",
+      "ch": "ch05_chunqiu",
+      "sec": "sec02_chu-wu-yue",
+      "label": "春秋时期楚国、吴国、越国地图历史地图",
+      "url": "https://history-map.osgeo.cn/#/page05/html?ch=ch05_chunqiu&sec=sec02_chu-wu-yue"
+    },
+    {
+      "page": "page05",
+      "period": "春秋",
+      "path": "/page05/html",
+      "ch": "ch05_chunqiu",
+      "sec": "sec03_qi-lu",
+      "label": "春秋时期齐国、鲁国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page05/html?ch=ch05_chunqiu&sec=sec03_qi-lu"
+    },
+    {
+      "page": "page05",
+      "period": "春秋",
+      "path": "/page05/html",
+      "ch": "ch05_chunqiu",
+      "sec": "sec04_jin-qin",
+      "label": "春秋时期晋国、秦国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page05/html?ch=ch05_chunqiu&sec=sec04_jin-qin"
+    },
+    {
+      "page": "page05",
+      "period": "春秋",
+      "path": "/page05/html",
+      "ch": "ch05_chunqiu",
+      "sec": "sec05_zheng-song-wei",
+      "label": "春秋时期郑国、宋国、卫国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page05/html?ch=ch05_chunqiu&sec=sec05_zheng-song-wei"
+    },
+    {
+      "page": "page05",
+      "period": "春秋",
+      "path": "/page05/html",
+      "ch": "ch05_chunqiu",
+      "sec": "sec06_beiyan",
+      "label": "春秋时期北燕国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page05/html?ch=ch05_chunqiu&sec=sec06_beiyan"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec01_zhanguo",
+      "label": "战国时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec01_zhanguo"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec02_zhuhou",
+      "label": "战国时期诸侯称雄形势（公元前350年）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec02_zhuhou"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec03_zhao-zhongshan",
+      "label": "战国时期赵国、中山国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec03_zhao-zhongshan"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec04_qi-lu-song",
+      "label": "战国时期齐国、鲁国、宋国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec04_qi-lu-song"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec05_han-wei",
+      "label": "战国时期韩国、魏国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec05_han-wei"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec06_chu-yue",
+      "label": "战国时期楚国、越国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec06_chu-yue"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec07_qin-shu",
+      "label": "战国时期秦国、蜀国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec07_qin-shu"
+    },
+    {
+      "page": "page06",
+      "period": "战国",
+      "path": "/page06/html",
+      "ch": "ch06_zhanguo",
+      "sec": "sec08_yan",
+      "label": "战国时期燕国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page06/html?ch=ch06_zhanguo&sec=sec08_yan"
+    },
+    {
+      "page": "page07",
+      "period": "秦",
+      "path": "/page07/html",
+      "ch": "ch07_qinchao",
+      "sec": "sec01_qin",
+      "label": "秦朝时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page07/html?ch=ch07_qinchao&sec=sec01_qin"
+    },
+    {
+      "page": "page07",
+      "period": "秦",
+      "path": "/page07/html",
+      "ch": "ch07_qinchao",
+      "sec": "sec02_shandong-south",
+      "label": "秦朝时期山东南部诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page07/html?ch=ch07_qinchao&sec=sec02_shandong-south"
+    },
+    {
+      "page": "page07",
+      "period": "秦",
+      "path": "/page07/html",
+      "ch": "ch07_qinchao",
+      "sec": "sec03_shandong-north",
+      "label": "秦朝时期山东北部诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page07/html?ch=ch07_qinchao&sec=sec03_shandong-north"
+    },
+    {
+      "page": "page07",
+      "period": "秦",
+      "path": "/page07/html",
+      "ch": "ch07_qinchao",
+      "sec": "sec04_huaihan",
+      "label": "秦朝时期淮汉以南诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page07/html?ch=ch07_qinchao&sec=sec04_huaihan"
+    },
+    {
+      "page": "page07",
+      "period": "秦",
+      "path": "/page07/html",
+      "ch": "ch07_qinchao",
+      "sec": "sec05_guanzhong",
+      "label": "秦朝时期关中诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page07/html?ch=ch07_qinchao&sec=sec05_guanzhong"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec01_xihan",
+      "label": "西汉时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec01_xihan"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec02_sili",
+      "label": "西汉时期司隶部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec02_sili"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec03_yan-yu-qing-xu",
+      "label": "西汉时期兖州、豫州、青州、徐州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec03_yan-yu-qing-xu"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec04_yizhou-north",
+      "label": "西汉时期益州刺史部北部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec04_yizhou-north"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec05_yizhou-south",
+      "label": "西汉时期益州刺史部南部（哀牢）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec05_yizhou-south"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec06_yangzhou",
+      "label": "西汉时期扬州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec06_yangzhou"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec07_youzhou",
+      "label": "西汉时期幽州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec07_youzhou"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec08_bingzhou",
+      "label": "西汉时期并州、朔方刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec08_bingzhou"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec09_beihai",
+      "label": "西汉时期东郡北海间诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec09_beihai"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec10_jizhou",
+      "label": "西汉时期冀州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec10_jizhou"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec11_jiaozhi",
+      "label": "西汉时期交阯刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec11_jiaozhi"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec12_jingzhou",
+      "label": "西汉时期荆州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec12_jingzhou"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec13_liangzhou",
+      "label": "西汉时期凉州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec13_liangzhou"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec14_xiyu",
+      "label": "西汉时期西域都护府历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec14_xiyu"
+    },
+    {
+      "page": "page08",
+      "period": "西汉",
+      "path": "/page08/html",
+      "ch": "ch08_xihan",
+      "sec": "sec15_xiongnu",
+      "label": "西汉时期匈奴等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page08/html?ch=ch08_xihan&sec=sec15_xiongnu"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec01_donghan",
+      "label": "东汉时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec01_donghan"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec02_sili",
+      "label": "东汉时期司隶校尉部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec02_sili"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec03_bingzhou",
+      "label": "东汉时期并州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec03_bingzhou"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec04_jingzhou",
+      "label": "东汉时期荆州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec04_jingzhou"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec05_liangzhou",
+      "label": "东汉时期凉州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec05_liangzhou"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec06_yu-yan-xu-qing",
+      "label": "东汉时期豫州、兖州、徐州、青州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec06_yu-yan-xu-qing"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec07_yizhou-north",
+      "label": "东汉时期益州刺史部北部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec07_yizhou-north"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec08_yizhou-south",
+      "label": "东汉时期益州刺史部南部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec08_yizhou-south"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec09_youzhou",
+      "label": "东汉时期幽州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec09_youzhou"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec10_xiyu",
+      "label": "东汉时期西域都护府历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec10_xiyu"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec11_xianbei",
+      "label": "东汉时期鲜卑等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec11_xianbei"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec12_jiaozhou",
+      "label": "东汉时期交州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec12_jiaozhou"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec13_yangzhou",
+      "label": "东汉时期扬州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec13_yangzhou"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec14_jizhou",
+      "label": "东汉时期冀州刺史部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec14_jizhou"
+    },
+    {
+      "page": "page09",
+      "period": "东汉",
+      "path": "/page09/html",
+      "ch": "ch09_donghan",
+      "sec": "sec15_zhujun",
+      "label": "东汉时期东郡齐国间诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page09/html?ch=ch09_donghan&sec=sec15_zhujun"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec01_sanguo",
+      "label": "三国时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec01_sanguo"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec02_xianbei",
+      "label": "三国时期鲜卑等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec02_xianbei"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec03_jiaozhou",
+      "label": "三国时期吴国交州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec03_jiaozhou"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec04_jingzhou-wu",
+      "label": "三国时期吴国荆州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec04_jingzhou-wu"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec05_yangzhou",
+      "label": "三国时期吴国扬州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec05_yangzhou"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec06_yizhou-north",
+      "label": "三国时期蜀汉益州北部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec06_yizhou-north"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec07_jingzhou-wei",
+      "label": "三国时期魏国荆州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec07_jingzhou-wei"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec08_liangzhou",
+      "label": "三国时期魏国凉州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec08_liangzhou"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec09_yongzhou",
+      "label": "三国时期魏国雍州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec09_yongzhou"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec10_youzhou",
+      "label": "三国时期魏国幽州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec10_youzhou"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec11_ji-bing",
+      "label": "三国时期魏国冀州、并州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec11_ji-bing"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec12_qing-xu",
+      "label": "三国时期魏国青州徐州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec12_qing-xu"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec13_yan-yu-yang",
+      "label": "三国时期魏国兖州、豫州、扬州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec13_yan-yu-yang"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec14_sizhou",
+      "label": "三国时期魏国司州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec14_sizhou"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec15_yizhou-south",
+      "label": "三国时期蜀汉益州南部（庲降都督）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec15_yizhou-south"
+    },
+    {
+      "page": "page10",
+      "period": "三国",
+      "path": "/page10/html",
+      "ch": "ch10_sanguo",
+      "sec": "sec16_xiyu",
+      "label": "三国时期西域长史府乌孙历史地图",
+      "url": "https://history-map.osgeo.cn/#/page10/html?ch=ch10_sanguo&sec=sec16_xiyu"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec01_xijin",
+      "label": "西晋时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec01_xijin"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec02_yangzhou",
+      "label": "西晋时期扬州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec02_yangzhou"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec03_jingzhou",
+      "label": "西晋时期荆州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec03_jingzhou"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec04_qing-xu",
+      "label": "西晋时期青州、徐州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec04_qing-xu"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec05_ningzhou",
+      "label": "西晋时期宁州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec05_ningzhou"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec06_liang-yi",
+      "label": "西晋时期梁州、益州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec06_liang-yi"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec07_liangzhou",
+      "label": "西晋时期凉州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec07_liangzhou"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec08_yong-qin",
+      "label": "西晋时期雍州秦州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec08_yong-qin"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec09_you-ping",
+      "label": "西晋时期幽州、平州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec09_you-ping"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec10_ji-bing",
+      "label": "西晋时期冀州、并州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec10_ji-bing"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec11_yan-yu",
+      "label": "西晋时期兖州、豫州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec11_yan-yu"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec12_sizhou",
+      "label": "西晋时期司州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec12_sizhou"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec13_xianbei",
+      "label": "西晋时期鲜卑等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec13_xianbei"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec14_xiyu",
+      "label": "西晋时期西域长史府乌孙历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec14_xiyu"
+    },
+    {
+      "page": "page11",
+      "period": "西晋",
+      "path": "/page11/html",
+      "ch": "ch11_xijin",
+      "sec": "sec15_jiao-guang",
+      "label": "西晋时期交州、广州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page11/html?ch=ch11_xijin&sec=sec15_jiao-guang"
+    },
+    {
+      "page": "page12",
+      "period": "东晋",
+      "path": "/page12/html",
+      "ch": "ch12_dongjin-shiliuguo",
+      "sec": "sec01_dongjin-shiliuguo",
+      "label": "东晋十六国时期历史地图全图",
+      "url": "https://history-map.osgeo.cn/#/page12/html?ch=ch12_dongjin-shiliuguo&sec=sec01_dongjin-shiliuguo"
+    },
+    {
+      "page": "page12",
+      "period": "东晋",
+      "path": "/page12/html",
+      "ch": "ch12_dongjin-shiliuguo",
+      "sec": "sec02_dongjin",
+      "label": "东晋时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page12/html?ch=ch12_dongjin-shiliuguo&sec=sec02_dongjin"
+    },
+    {
+      "page": "page12",
+      "period": "东晋",
+      "path": "/page12/html",
+      "ch": "ch12_dongjin-shiliuguo",
+      "sec": "sec03_houqin-wei-nanliang-beiliang",
+      "label": "十六国时期后秦、魏、南凉、北凉、西凉、南燕、夏、西秦、北燕历史地图",
+      "url": "https://history-map.osgeo.cn/#/page12/html?ch=ch12_dongjin-shiliuguo&sec=sec03_houqin-wei-nanliang-beiliang"
+    },
+    {
+      "page": "page12",
+      "period": "东晋",
+      "path": "/page12/html",
+      "ch": "ch12_dongjin-shiliuguo",
+      "sec": "sec04_houqin-houyan-xiqin",
+      "label": "东晋十六国时期后秦、后燕、西秦、后凉、魏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page12/html?ch=ch12_dongjin-shiliuguo&sec=sec04_houqin-houyan-xiqin"
+    },
+    {
+      "page": "page12",
+      "period": "东晋",
+      "path": "/page12/html",
+      "ch": "ch12_dongjin-shiliuguo",
+      "sec": "sec05_qianqin",
+      "label": "十六国时期前秦历史地图",
+      "url": "https://history-map.osgeo.cn/#/page12/html?ch=ch12_dongjin-shiliuguo&sec=sec05_qianqin"
+    },
+    {
+      "page": "page12",
+      "period": "东晋",
+      "path": "/page12/html",
+      "ch": "ch12_dongjin-shiliuguo",
+      "sec": "sec06_cheng-qianzhao",
+      "label": "十六国时期成、前赵、前凉、后赵历史地图",
+      "url": "https://history-map.osgeo.cn/#/page12/html?ch=ch12_dongjin-shiliuguo&sec=sec06_cheng-qianzhao"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec01_song-wei",
+      "label": "南北朝时期南朝宋、北朝魏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec01_song-wei"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec02_qi-wei",
+      "label": "南北朝时期南朝齐、北朝魏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec02_qi-wei"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec03_liang-wei",
+      "label": "南北朝时期梁、东魏、西魏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec03_liang-wei"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec04_chen-qi-zhou",
+      "label": "南北朝时期南朝陈、北朝齐、北朝周历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec04_chen-qi-zhou"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec05_song",
+      "label": "南北朝时期南朝宋历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec05_song"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec06_qi-yangzhou",
+      "label": "南北朝时期南朝齐扬州、徐州、豫州、南兖州、北徐州、青州、冀州等历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec06_qi-yangzhou"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec07_qi-jiangzhou",
+      "label": "南北朝时期南朝齐江州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec07_qi-jiangzhou"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec08_qi-guangzhou",
+      "label": "南北朝时期南朝齐广州、越州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec08_qi-guangzhou"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec09_qi-jiao",
+      "label": "南北朝时期南朝齐交州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec09_qi-jiao"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec10_qi-jing-ying",
+      "label": "南北朝时期南朝齐荆州、郢州、湘州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec10_qi-jing-ying"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec11_qi-si-yong",
+      "label": "南北朝时期南朝齐司州、雍州、宁蛮府历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec11_qi-si-yong"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec12_qi-liang-qin",
+      "label": "南北朝时期南朝齐梁州、秦州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec12_qi-liang-qin"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec13_qi-yizhou",
+      "label": "南北朝时期南朝齐益州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec13_qi-yizhou"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec14_qi-ningzhou",
+      "label": "南北朝时期南朝齐宁州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec14_qi-ningzhou"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec15_nan-liang",
+      "label": "南北朝时期南朝梁历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec15_nan-liang"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec16_nan-chen",
+      "label": "南北朝时期南陈历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec16_nan-chen"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec17_bei-wei-si",
+      "label": "南北朝时期北朝魏司州、豫州、荆州、洛州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec17_bei-wei-si"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec18_bei-wei-yan",
+      "label": "南北朝时期北朝魏兖州、青州、齐州、徐州等历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec18_bei-wei-yan"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec19_bei-wei-xiang",
+      "label": "南北朝时期北朝魏相州、冀州、幽州、平州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec19_bei-wei-xiang"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec20_bei-wei-bing",
+      "label": "南北朝时期北朝魏并州、肆州、恒州、朔州等州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec20_bei-wei-bing"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec21_bei-wei-wu",
+      "label": "南北朝时期北朝魏武川、御夷等镇历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec21_bei-wei-wu"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec22_bei-wei-yong",
+      "label": "南北朝时期北朝魏雍州、秦州、夏州、伏野镇、博骨镇地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec22_bei-wei-yong"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec23_bei-wei-he",
+      "label": "南北朝时期北朝魏河州、凉州、敦煌镇历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec23_bei-wei-he"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec24_bei-dongwei",
+      "label": "南北朝时期北朝东魏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec24_bei-dongwei"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec25_bei-xiwei",
+      "label": "南北朝时期北朝西魏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec25_bei-xiwei"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec26_bei-qi",
+      "label": "南北朝时期北朝齐历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec26_bei-qi"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec27_bei-zhou",
+      "label": "南北朝时期北周历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec27_bei-zhou"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec28_xirong-yanqi",
+      "label": "南北朝时期魏西戎校尉府、焉耆镇、北凉、龟兹、于阗、疏勒、乌孙、悦般等国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec28_xirong-yanqi"
+    },
+    {
+      "page": "page13",
+      "period": "南北朝",
+      "path": "/page13/html",
+      "ch": "ch13_nan-bei",
+      "sec": "sec29_rouran",
+      "label": "南北朝时期柔然等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page13/html?ch=ch13_nan-bei&sec=sec29_rouran"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec01_sui",
+      "label": "隋朝时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec01_sui"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec02_lingnan",
+      "label": "隋朝时期岭南诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec02_lingnan"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec03_guanlong",
+      "label": "隋朝时期关陇诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec03_guanlong"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec04_huainan-bei",
+      "label": "隋朝时期淮南江表诸郡北部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec04_huainan-bei"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec05_henan",
+      "label": "隋朝时期河南诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec05_henan"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec06_liaoxi",
+      "label": "隋朝时期辽西诸郡、室韦靺鞨等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec06_liaoxi"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec07_huainan",
+      "label": "隋朝时期淮南江表诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec07_huainan"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec08_hebei",
+      "label": "隋朝时期河北诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec08_hebei"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec09_bahan",
+      "label": "隋朝时期巴汉诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec09_bahan"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec10_nanning",
+      "label": "隋朝时期南宁地区历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec10_nanning"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec11_hedong",
+      "label": "隋朝时期河东诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec11_hedong"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec12_jianghan",
+      "label": "隋朝时期江汉沅湘诸郡的历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec12_jianghan"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec13_hexi",
+      "label": "隋朝时期河西诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec13_hexi"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec14_minshu",
+      "label": "隋朝时期岷蜀诸郡历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec14_minshu"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec15_dongtujue",
+      "label": "隋朝时期东突厥历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec15_dongtujue"
+    },
+    {
+      "page": "page14",
+      "period": "隋",
+      "path": "/page14/html",
+      "ch": "ch14_sui",
+      "sec": "sec16_xitujue",
+      "label": "隋朝时期西突厥历史地图",
+      "url": "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec16_xitujue"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec01_tang669",
+      "label": "唐朝时期669年历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec01_tang669"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec02_tang741",
+      "label": "唐朝时期741年历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec02_tang741"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec03_tang820",
+      "label": "唐朝时期820年历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec03_tang820"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec04_fangzhen",
+      "label": "唐朝时期元和年间方镇分布历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec04_fangzhen"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec05_jingjidao",
+      "label": "唐朝时期京畿道、关内道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec05_jingjidao"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec06_guanneidao-bei",
+      "label": "唐朝时期关内道北部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec06_guanneidao-bei"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec07_duji-henan",
+      "label": "唐朝时期都畿道、河南道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec07_duji-henan"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec08_hedong",
+      "label": "唐朝时期河东道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec08_hedong"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec09_hebei-bei",
+      "label": "唐朝时期河北道北部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec09_hebei-bei"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec10_hebei-nan",
+      "label": "唐朝时期河北道南部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec10_hebei-nan"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec11_shannan-dong",
+      "label": "唐朝时期山南东道历史地图（开元29年，公元741年）",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec11_shannan-dong"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec12_huainan",
+      "label": "唐朝时期淮南道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec12_huainan"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec13_jiangnan-dong",
+      "label": "唐朝时期江南东道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec13_jiangnan-dong"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec14_jiangnan-xi",
+      "label": "唐朝时期江南西道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec14_jiangnan-xi"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec15_qianzhong",
+      "label": "唐朝时期黔中道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec15_qianzhong"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec16_longyou-dong",
+      "label": "唐朝时期陇右道东部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec16_longyou-dong"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec17_longyou-xi",
+      "label": "唐朝时期陇右道西部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec17_longyou-xi"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec18_jiannan-nan",
+      "label": "唐朝时期剑南道南部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec18_jiannan-nan"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec19_lingnan-dong",
+      "label": "唐朝时期岭南道东部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec19_lingnan-dong"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec20_lingnan-xi",
+      "label": "唐朝时期岭南道西部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec20_lingnan-xi"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec21_tujue",
+      "label": "唐朝时期突厥历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec21_tujue"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec22_huihu",
+      "label": "唐朝时期回鹘历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec22_huihu"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec23_jiannan-bei",
+      "label": "唐朝时期剑南道北部（成都附近）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec23_jiannan-bei"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec24_jiannan-dong-guizhou",
+      "label": "唐朝时期岭南道东部贵州容州附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec24_jiannan-dong-guizhou"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec25_tubo",
+      "label": "唐朝时期吐蕃逻些城历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec25_tubo"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec26_bohai",
+      "label": "唐朝时期渤海历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec26_bohai"
+    },
+    {
+      "page": "page15",
+      "period": "唐",
+      "path": "/page15/html",
+      "ch": "ch15_tang",
+      "sec": "sec27_nanzhao",
+      "label": "唐朝时期南诏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page15/html?ch=ch15_tang&sec=sec27_nanzhao"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec01_wu-dai",
+      "label": "五代十国时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec01_wu-dai"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec02_liang-jin-qi",
+      "label": "五代十国时期梁、晋、岐等镇历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec02_liang-jin-qi"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec03_zhou-beihan",
+      "label": "五代十国时期周、北汉历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec03_zhou-beihan"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec04_xizhouhuihu",
+      "label": "五代十国时期西州回鹘、于阗、九姓乌护、葛逻禄等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec04_xizhouhuihu"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec05_jin-han",
+      "label": "五代十国时期晋、汉历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec05_jin-han"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec06_nanping",
+      "label": "五代十国时期南平历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec06_nanping"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec07_min",
+      "label": "五代十国时期闽历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec07_min"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec08_chu",
+      "label": "五代十国时期楚历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec08_chu"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec09_nantang",
+      "label": "五代十国时期南唐历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec09_nantang"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec10_houhan",
+      "label": "五代十国时期后汉历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec10_houhan"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec11_nanhan",
+      "label": "五代十国时期南汉历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec11_nanhan"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec12_houshu",
+      "label": "五代十国时期后蜀历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec12_houshu"
+    },
+    {
+      "page": "page16",
+      "period": "五代",
+      "path": "/page16/html",
+      "ch": "ch16_wu-dai",
+      "sec": "sec13_qianshu",
+      "label": "五代十国时期前蜀历史地图",
+      "url": "https://history-map.osgeo.cn/#/page16/html?ch=ch16_wu-dai&sec=sec13_qianshu"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec01_bei-song",
+      "label": "北宋、辽时期历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec01_bei-song"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec02_jingji",
+      "label": "北宋、辽时期北宋京畿路、京西南路、京西北路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec02_jingji"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec03_jiangnan-xi",
+      "label": "北宋、辽时期北宋江南西路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec03_jiangnan-xi"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec04_jingdong-dong",
+      "label": "北宋、辽时期北宋京东东路、京东西路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec04_jingdong-dong"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec05_hebei-dong",
+      "label": "北宋、辽时期北宋河北东路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec05_hebei-dong"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec06_yongxingjun",
+      "label": "北宋、辽时期北宋永兴军路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec06_yongxingjun"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec07_qinfeng",
+      "label": "北宋、辽时期北宋秦凤路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec07_qinfeng"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec08_huainan-dong",
+      "label": "北宋、辽时期北宋淮南东路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec08_huainan-dong"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec09_liangzhe",
+      "label": "北宋、辽时期北宋两浙路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec09_liangzhe"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec10_jinghu-nan",
+      "label": "北宋、辽时期北宋荆湖南路、荆湖北路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec10_jinghu-nan"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec11_chengdufu",
+      "label": "北宋、辽时期北宋成都府路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec11_chengdufu"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec12_fujian",
+      "label": "北宋、辽时期北宋福建路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec12_fujian"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec13_guangnan-dong",
+      "label": "北宋、辽时期北宋广南东路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec13_guangnan-dong"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec14_linhuangfu-liao",
+      "label": "北宋、辽朝时期辽临潢府附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec14_linhuangfu-liao"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec15_zhongjingdao-liao",
+      "label": "北宋、辽时期辽中京道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec15_zhongjingdao-liao"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec16_shangjingdao-liao",
+      "label": "北宋、辽朝时期辽上京道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec16_shangjingdao-liao"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec17_dongjingdao-liao",
+      "label": "北宋、辽朝时期辽东京道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec17_dongjingdao-liao"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec18_nanjingdao-liao",
+      "label": "北宋、辽朝时期辽南京道历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec18_nanjingdao-liao"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec19_heihan",
+      "label": "北宋、辽时期西州回鹘、于阗、黑汗（喀喇汗）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec19_heihan"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec20_xixia",
+      "label": "北宋、辽时期西夏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec20_xixia"
+    },
+    {
+      "page": "page17",
+      "period": "北宋",
+      "path": "/page17/html",
+      "ch": "ch17_bei-song",
+      "sec": "sec21_tubo",
+      "label": "北宋、辽时期吐蕃诸部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page17/html?ch=ch17_bei-song&sec=sec21_tubo"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec01_nansong-jin-1142",
+      "label": "金、南宋时期1142年历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec01_nansong-jin-1142"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec02_nansong-jin-1208",
+      "label": "南宋、金朝时期（公元1208年）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec02_nansong-jin-1208"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec03_damingfu",
+      "label": "南宋、金时期金朝大名府路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec03_damingfu"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec04_dongjing",
+      "label": "南宋、金时期金朝东京路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec04_dongjing"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec05_beijing",
+      "label": "南宋、金时期金朝北京路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec05_beijing"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec06_xijing",
+      "label": "南宋、金时期金朝西京路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec06_xijing"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec07_fengxiang",
+      "label": "南宋、金时期金朝凤翔路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec07_fengxiang"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec08_shandong-dong",
+      "label": "南宋、金时期金朝山东东路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec08_shandong-dong"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec09_nanjinglu",
+      "label": "南宋、金时期金朝南京路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec09_nanjinglu"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec10_jiangnan-dong",
+      "label": "南宋时期两浙西路、两浙东路、江南东路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec10_jiangnan-dong"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec11_jiangnan-xi",
+      "label": "南宋时期江南西路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec11_jiangnan-xi"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec12_huainan-dong",
+      "label": "南宋时期淮南东路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec12_huainan-dong"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec13_jinghu-nan",
+      "label": "南宋时期荆湖南路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec13_jinghu-nan"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec14_guangnan-dong",
+      "label": "南宋时期广南东路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec14_guangnan-dong"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec15_fujian",
+      "label": "南宋时期福建路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec15_fujian"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec16_chengdufu",
+      "label": "南宋时期成都府路历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec16_chengdufu"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec17_chengdufu-fujin",
+      "label": "南宋时期成都府附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec17_chengdufu-fujin"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec18_xiliao",
+      "label": "南宋、金时期西辽历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec18_xiliao"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec19_dali",
+      "label": "南宋、金时期大理历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec19_dali"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec20_dali-zhong",
+      "label": "南宋、金时期大理中部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec20_dali-zhong"
+    },
+    {
+      "page": "page18",
+      "period": "南宋",
+      "path": "/page18/html",
+      "ch": "ch18_nan-song",
+      "sec": "sec21_menggu",
+      "label": "南宋、金时期蒙古、克烈等部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page18/html?ch=ch18_nan-song&sec=sec21_menggu"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec01_lishiditu1280",
+      "label": "元朝时期历史全图（至元17年公元1280年）",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec01_lishiditu1280"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec02_lishiditu1330",
+      "label": "元朝时期历史全图（至顺元年公元1330年）",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec02_lishiditu1330"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec03_zhongshusheng",
+      "label": "元朝时期中书省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec03_zhongshusheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec04_zhongshu-nan",
+      "label": "元朝时期中书省南部的历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec04_zhongshu-nan"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec05_lingbeixingsheng",
+      "label": "元朝时期岭北行省的历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec05_lingbeixingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec06_liaoyangxingsheng",
+      "label": "元朝时期辽阳行省的历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec06_liaoyangxingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec07_henanjiangbeixingsheng",
+      "label": "元朝时期河南江北行省的历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec07_henanjiangbeixingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec08_shanxixingsheng",
+      "label": "元朝时期陕西行省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec08_shanxixingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec09_sichuanxingsheng",
+      "label": "元朝时期四川行省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec09_sichuanxingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec10_gansuxingsheng",
+      "label": "元朝时期甘肃行省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec10_gansuxingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec11_beiting",
+      "label": "元朝时期哈密力、北庭、哈剌火州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec11_beiting"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec12_yunnanxingsheng",
+      "label": "元朝时期云南行省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec12_yunnanxingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec13_yunnanxing-zhong",
+      "label": "元朝时期云南行省中部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec13_yunnanxing-zhong"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec14_jiangzhexingsheng",
+      "label": "元朝时期江浙行省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec14_jiangzhexingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec15_jiangzhexingsheng-bei",
+      "label": "元朝时期江浙行省北部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec15_jiangzhexingsheng-bei"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec16_jiangxixingsheng",
+      "label": "元朝时期江西行省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec16_jiangxixingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec17_huguangxingsheng",
+      "label": "元朝时期湖广行省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec17_huguangxingsheng"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec18_huguangxingsheng-zhong",
+      "label": "元朝时期湖广行省中部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec18_huguangxingsheng-zhong"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec19_xuanzhengyuan",
+      "label": "元朝时期宣政院辖地历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec19_xuanzhengyuan"
+    },
+    {
+      "page": "page19",
+      "period": "元",
+      "path": "/page19/html",
+      "ch": "ch19_yuan",
+      "sec": "sec20_chahetai",
+      "label": "元朝时期察合台汗国历史地图",
+      "url": "https://history-map.osgeo.cn/#/page19/html?ch=ch19_yuan&sec=sec20_chahetai"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec01_ming1433",
+      "label": "明朝时期1433年历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec01_ming1433"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec02_ming1582",
+      "label": "明朝时期1582年历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec02_ming1582"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec03_jingshi-beizhili",
+      "label": "明朝时期京师（北直隶）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec03_jingshi-beizhili"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec04_shuntianfu",
+      "label": "明朝时期京师顺天府附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec04_shuntianfu"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec05_nanjing-nanzhili",
+      "label": "明朝时期南京（南直隶）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec05_nanjing-nanzhili"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec06_yingtianfu",
+      "label": "明朝时期南京应天府附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec06_yingtianfu"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec07_shandong",
+      "label": "明朝时期山东历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec07_shandong"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec08_shandong-liaodong",
+      "label": "明朝时期山东辽东都司历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec08_shandong-liaodong"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec09_shanxi",
+      "label": "明朝时期山西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec09_shanxi"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec10_shanxixingdu",
+      "label": "明朝时期山西行都司历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec10_shanxixingdu"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec11_henan",
+      "label": "明朝时期河南历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec11_henan"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec12_shanxi",
+      "label": "明朝时期陕西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec12_shanxi"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec13_shanxixingdu",
+      "label": "明朝时期陕西行都司历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec13_shanxixingdu"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec14_sichuan",
+      "label": "明代时期四川历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec14_sichuan"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec15_jiangxi",
+      "label": "明朝时期江西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec15_jiangxi"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec16_huguang",
+      "label": "明朝时期湖广历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec16_huguang"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec17_zhejiang",
+      "label": "明朝时期浙江历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec17_zhejiang"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec18_fujian",
+      "label": "明朝时期福建历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec18_fujian"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec19_guangdong",
+      "label": "明朝时期广东历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec19_guangdong"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec20_guangxi",
+      "label": "明朝时期广西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec20_guangxi"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec21_yunnan",
+      "label": "明朝时期云南历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec21_yunnan"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec22_yuannan-zhong",
+      "label": "明朝时期云南中部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec22_yuannan-zhong"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec23_guizhou",
+      "label": "明朝时期贵州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec23_guizhou"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec24_nuergandusi",
+      "label": "明朝时期奴儿干都司历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec24_nuergandusi"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec25_hamidengwei",
+      "label": "明朝时期哈密等卫历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec25_hamidengwei"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec26_duogandusi",
+      "label": "明朝时期乌斯藏都司、朵甘都司历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec26_duogandusi"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec27_dada",
+      "label": "明朝时期鞑靼、瓦剌历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec27_dada"
+    },
+    {
+      "page": "page20",
+      "period": "明",
+      "path": "/page20/html",
+      "ch": "ch20_ming",
+      "sec": "sec28_yilibali",
+      "label": "明朝时期亦力把里历史地图",
+      "url": "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec28_yilibali"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec01_quantu1",
+      "label": "清朝时期历史全图（嘉庆二十五年公元1820年）",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec01_quantu1"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec02_quantu2",
+      "label": "清朝时期历史全图（光绪三十四年1908年）",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec02_quantu2"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec03_zhili",
+      "label": "清朝时期直隶历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec03_zhili"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec04_zhilizhong",
+      "label": "清朝时期直隶中部历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec04_zhilizhong"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec05_shengjing",
+      "label": "清朝时期盛京（奉天）历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec05_shengjing"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec06_jilin",
+      "label": "清朝时期吉林历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec06_jilin"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec07_heilongjiang",
+      "label": "清朝时期黑龙江历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec07_heilongjiang"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec08_jiangsu",
+      "label": "清朝时期江苏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec08_jiangsu"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec09_anhui",
+      "label": "清朝时期安徽历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec09_anhui"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec10_shanxi",
+      "label": "清朝时期山西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec10_shanxi"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec11_shandong",
+      "label": "清朝时期山东历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec11_shandong"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec12_henan",
+      "label": "清朝时期河南省历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec12_henan"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec13_shanxi",
+      "label": "清朝时期陕西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec13_shanxi"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec14_gansu",
+      "label": "清朝时期甘肃历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec14_gansu"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec15_lanzhou-pingliang",
+      "label": "清朝甘肃兰州府、平凉府附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec15_lanzhou-pingliang"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec16_zhejiang",
+      "label": "清朝时期浙江历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec16_zhejiang"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec17_jiangxi",
+      "label": "清朝时期江西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec17_jiangxi"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec18_hubei",
+      "label": "清朝时期湖北历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec18_hubei"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec19_hunan",
+      "label": "清朝时期湖南历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec19_hunan"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec20_sichuan",
+      "label": "清朝时期四川历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec20_sichuan"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec21_chengdufu-fujin",
+      "label": "清朝时期四川成都府附近历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec21_chengdufu-fujin"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec22_fujian",
+      "label": "清朝时期福建历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec22_fujian"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec23_guangdong",
+      "label": "清朝时期广东历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec23_guangdong"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec24_guangxi",
+      "label": "清朝时期广西历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec24_guangxi"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec25_yunnan",
+      "label": "清朝时期云南历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec25_yunnan"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec26_guizhou",
+      "label": "清朝时期贵州历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec26_guizhou"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec27_xinjiang",
+      "label": "清朝时期新疆历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec27_xinjiang"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec28_yili",
+      "label": "清朝时期新疆伊犁地区历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec28_yili"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec29_wulisuyatai",
+      "label": "清朝时期乌里雅苏台历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec29_wulisuyatai"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec30_neimeng-taoxi-chahaer",
+      "label": "清朝时期内蒙古六盟、套西二旗、察哈尔历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec30_neimeng-taoxi-chahaer"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec31_qinghai",
+      "label": "清朝时期青海历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec31_qinghai"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec32_xizang",
+      "label": "清朝时期西藏历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec32_xizang"
+    },
+    {
+      "page": "page21",
+      "period": "清",
+      "path": "/page21/html",
+      "ch": "ch21_qing",
+      "sec": "sec33_rikaze",
+      "label": "清朝时期西藏喇萨、日喀则地区历史地图",
+      "url": "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec33_rikaze"
+    }
+  ]
+}

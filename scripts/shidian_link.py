@@ -1,0 +1,279 @@
+#!/usr/bin/env python3
+"""Find verified Shidian Guji chapter links for cited source passages."""
+
+from __future__ import annotations
+
+import argparse
+import json
+import re
+import unicodedata
+from collections import Counter
+from html.parser import HTMLParser
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Protocol, Sequence
+from urllib.parse import quote, urljoin
+
+import requests
+
+
+BASE_URL = "https://www.shidianguji.com"
+SEARCH_BASE = f"{BASE_URL}/zh/search"
+TIMEOUT = 30
+REQUEST_HEADERS = {
+    "User-Agent": "Mozilla/5.0 (compatible; HistoryAgentSkills/1.0; +https://www.shidianguji.com/)",
+    "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
+    "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.5",
+}
+MAX_KEYWORD_LENGTH = 64
+MAX_SOURCE_LENGTH = 160
+MAX_QUOTE_LENGTH = 500
+STATUS_RESOLVED = "resolved"
+STATUS_NOT_FOUND = "not_found"
+STATUS_INVALID = "invalid"
+CHAPTER_HREF_PATTERN = re.compile(r"^/(?:zh/)?book/[^/\s]+/chapter/[^?\s#]+")
+
+
+class ShidianLinkError(ValueError):
+    """Raised for invalid inputs or Shidian fetch problems."""
+
+
+class HttpGetter(Protocol):
+    """Small protocol for tests and alternate HTTP fetchers."""
+
+    def __call__(self, url: str, **kwargs: Any) -> Any:
+        """Return a response-like object with text/status methods."""
+
+
+class ShidianSearchParser(HTMLParser):
+    """Extract Shidian chapter anchors and their visible search-result text."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.results: List[Dict[str, str]] = []
+        self._current: Optional[Dict[str, Any]] = None
+
+    def handle_starttag(self, tag: str, attrs: Sequence[tuple[str, Optional[str]]]) -> None:
+        if tag.lower() != "a":
+            return
+        href = ""
+        for key, value in attrs:
+            if key.lower() == "href" and value:
+                href = value.strip()
+                break
+        if CHAPTER_HREF_PATTERN.match(href):
+            self._current = {"href": href, "text": []}
+
+    def handle_data(self, data: str) -> None:
+        if self._current is not None:
+            self._current["text"].append(data)
+
+    def handle_endtag(self, tag: str) -> None:
+        if tag.lower() != "a" or self._current is None:
+            return
+        href = str(self._current["href"])
+        text = " ".join(part.strip() for part in self._current["text"] if part.strip())
+        if href and text:
+            self.results.append({"href": href, "text": text})
+        self._current = None
+
+
+def find_shidian_link(
+    quote_text: str,
+    source: str,
+    keyword: Optional[str] = None,
+    html: Optional[str] = None,
+    http_get: Optional[HttpGetter] = None,
+) -> Dict[str, Any]:
+    """Return a verified Shidian chapter link or a clearly unverified fallback."""
+
+    quote_checked = validate_text(quote_text, "原文短引", MAX_QUOTE_LENGTH)
+    source_checked = validate_text(source, "出处", MAX_SOURCE_LENGTH)
+    keyword_checked = validate_keyword(keyword or derive_keyword(quote_checked, source_checked))
+    search_url = build_search_url(keyword_checked)
+
+    if html is None:
+        html = fetch_search_html(search_url, http_get=http_get)
+    candidates = parse_search_results(html)
+    scored = score_candidates(candidates, quote_checked, source_checked)
+
+    if scored and scored[0]["score"] >= 70 and scored[0]["quote_score"] >= 45:
+        best = scored[0]
+        return {
+            "status": STATUS_RESOLVED,
+            "url": best["url"],
+            "search_url": search_url,
+            "matched_source": best["text"],
+            "reason": "识典搜索结果中的章节链接与引文/出处达到验证阈值",
+        }
+
+    return {
+        "status": STATUS_NOT_FOUND,
+        "url": None,
+        "search_url": search_url,
+        "matched_source": scored[0]["text"] if scored else None,
+        "reason": "未能验证识典章节链接与该原文短引/出处相符",
+    }
+
+
+def validate_text(value: str, label: str, max_length: int) -> str:
+    text = value.strip()
+    if not text:
+        raise ShidianLinkError(f"{label}不能为空")
+    if len(text) > max_length:
+        raise ShidianLinkError(f"{label}长度不能超过 {max_length} 字符")
+    if any(ord(char) < 32 and char not in "\t\n\r" for char in text):
+        raise ShidianLinkError(f"{label}包含控制字符")
+    return text
+
+
+def validate_keyword(value: str) -> str:
+    text = validate_text(value, "关键词", MAX_KEYWORD_LENGTH)
+    if any(char in text for char in "<>{}\\"):
+        raise ShidianLinkError("关键词包含不允许的字符")
+    return text
+
+
+def derive_keyword(quote_text: str, source: str) -> str:
+    chars = re.findall(r"[\u4e00-\u9fffA-Za-z0-9]{2,}", quote_text)
+    if chars:
+        return chars[0][:10]
+    titles = extract_source_terms(source)
+    if titles:
+        return titles[0][:MAX_KEYWORD_LENGTH]
+    return quote_text[:MAX_KEYWORD_LENGTH]
+
+
+def build_search_url(keyword: str) -> str:
+    return f"{SEARCH_BASE}/{quote(keyword, safe='')}"
+
+
+def fetch_search_html(search_url: str, http_get: Optional[HttpGetter] = None) -> str:
+    if not search_url.startswith(f"{BASE_URL}/"):
+        raise ShidianLinkError("识典检索 URL 必须使用 HTTPS 官方域名")
+    getter = http_get or requests.get
+    try:
+        response = getter(search_url, timeout=TIMEOUT, headers=REQUEST_HEADERS)
+        response.raise_for_status()
+    except requests.exceptions.Timeout as exc:
+        raise ShidianLinkError("识典古籍检索超时") from exc
+    except requests.exceptions.RequestException as exc:
+        raise ShidianLinkError(f"识典古籍检索失败: {exc}") from exc
+    return str(response.text)
+
+
+def parse_search_results(html: str) -> List[Dict[str, str]]:
+    parser = ShidianSearchParser()
+    parser.feed(html)
+    seen = set()
+    results: List[Dict[str, str]] = []
+    for item in parser.results:
+        href = item["href"]
+        if href in seen:
+            continue
+        seen.add(href)
+        results.append(
+            {
+                "url": urljoin(BASE_URL, href),
+                "text": collapse_space(item["text"]),
+            }
+        )
+    return results
+
+
+def score_candidates(candidates: Iterable[Mapping[str, str]], quote_text: str, source: str) -> List[Dict[str, Any]]:
+    source_terms = extract_source_terms(source)
+    scored: List[Dict[str, Any]] = []
+    for candidate in candidates:
+        text = candidate.get("text") or ""
+        quote_score = text_overlap_score(quote_text, text)
+        source_score = source_match_score(source_terms, text)
+        total = quote_score + source_score
+        if quote_score >= 45 or source_score > 0:
+            scored.append(
+                {
+                    "url": candidate.get("url"),
+                    "text": text,
+                    "score": total,
+                    "quote_score": quote_score,
+                    "source_score": source_score,
+                }
+            )
+    scored.sort(key=lambda item: (item["score"], item["quote_score"], item["source_score"]), reverse=True)
+    return scored
+
+
+def text_overlap_score(quote_text: str, haystack: str) -> int:
+    quote_norm = normalize_for_match(quote_text)
+    haystack_norm = normalize_for_match(haystack)
+    if not quote_norm or not haystack_norm:
+        return 0
+    if quote_norm in haystack_norm:
+        return 100
+    quote_counter = Counter(quote_norm)
+    haystack_counter = Counter(haystack_norm)
+    overlap = sum(min(count, haystack_counter.get(char, 0)) for char, count in quote_counter.items())
+    return int(100 * overlap / max(len(quote_norm), 1))
+
+
+def source_match_score(source_terms: Sequence[str], text: str) -> int:
+    text_norm = normalize_for_match(text)
+    score = 0
+    for term in source_terms:
+        term_norm = normalize_for_match(term)
+        if term_norm and term_norm in text_norm:
+            score = max(score, 35 if len(term_norm) >= 2 else 10)
+    return score
+
+
+def extract_source_terms(source: str) -> List[str]:
+    terms = re.findall(r"《([^》]+)》", source)
+    if not terms:
+        terms = re.findall(r"[\u4e00-\u9fff]{2,8}", source)
+    return list(dict.fromkeys(term.strip() for term in terms if term.strip()))
+
+
+def normalize_for_match(text: str) -> str:
+    normalized = unicodedata.normalize("NFKC", text)
+    normalized = normalized.translate(str.maketrans({"書": "书", "傳": "传", "紀": "纪", "卷": "卷"}))
+    return re.sub(r"[\s,，、.。:：;；!?！？()（）《》〈〉\[\]【】\"'“”‘’\-_/·]+", "", normalized)
+
+
+def collapse_space(text: str) -> str:
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def format_text(result: Mapping[str, Any]) -> str:
+    if result.get("status") == STATUS_RESOLVED:
+        return f"识典原文: {result['url']}"
+    return f"{result.get('status')}: {result.get('reason')}；检索页: {result.get('search_url')}"
+
+
+def main() -> int:
+    parser = argparse.ArgumentParser(description="验证并生成识典古籍原文章节链接")
+    parser.add_argument("--quote", required=True, help="最终回答中准备引用的原文短引")
+    parser.add_argument("--source", required=True, help="书名+卷章出处，如 《魏书》卷三五《崔浩传》")
+    parser.add_argument("--keyword", help="识典检索关键词；缺省时从出处或引文中派生")
+    parser.add_argument("--json", action="store_true", help="输出 JSON")
+    args = parser.parse_args()
+
+    try:
+        result = find_shidian_link(args.quote, args.source, args.keyword)
+    except ShidianLinkError as exc:
+        keyword = (args.keyword or args.source[:MAX_KEYWORD_LENGTH]).strip()
+        search_url = build_search_url(keyword) if keyword else None
+        result = {
+            "status": STATUS_INVALID,
+            "url": None,
+            "search_url": search_url,
+            "matched_source": None,
+            "reason": str(exc),
+        }
+
+    if args.json:
+        print(json.dumps(result, ensure_ascii=False, indent=2))
+    else:
+        print(format_text(result))
+    return 0 if result.get("status") == STATUS_RESOLVED else 1
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())

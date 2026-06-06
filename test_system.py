@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import os
+import json
 import sqlite3
 import subprocess
 import sys
@@ -68,6 +69,10 @@ def test_files() -> bool:
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
         "scripts/place_resolver.py",
+        "scripts/history_map_link.py",
+        "scripts/shidian_link.py",
+        "scripts/update_history_map_index.py",
+        "data/history_map_index.json",
         "SKILL.md",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
@@ -106,6 +111,9 @@ def test_scripts_compile() -> bool:
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
         "scripts/place_resolver.py",
+        "scripts/history_map_link.py",
+        "scripts/shidian_link.py",
+        "scripts/update_history_map_index.py",
     ]
     result = subprocess.run(
         [str(ROOT / "venv" / "bin" / "python"), "-m", "py_compile", *scripts],
@@ -428,6 +436,136 @@ def test_place_resolver() -> bool:
     return ok
 
 
+def test_history_map_link() -> bool:
+    """Test left-map/right-history route matching with the static index."""
+    print("\n测试7: 左图右史同代一级区划链接...")
+    from history_map_link import resolve_history_map_link
+
+    ok = True
+
+    ming_shandong = resolve_history_map_link("济南", 1582, "山东布政司", dynasty="明")
+    if (
+        ming_shandong["status"] == "resolved"
+        and ming_shandong["url"] == "https://history-map.osgeo.cn/#/page20/html?ch=ch20_ming&sec=sec07_shandong"
+    ):
+        print("✓ 明代山东布政司匹配明朝山东地图")
+    else:
+        print(f"✗ 明代山东匹配失败: {ming_shandong}")
+        ok = False
+
+    qing_henan = resolve_history_map_link("开封", 1820, "河南省", dynasty="清")
+    if (
+        qing_henan["status"] == "resolved"
+        and qing_henan["url"] == "https://history-map.osgeo.cn/#/page21/html?ch=ch21_qing&sec=sec12_henan"
+    ):
+        print("✓ 清代河南省匹配清朝河南省地图")
+    else:
+        print(f"✗ 清代河南匹配失败: {qing_henan}")
+        ok = False
+
+    with (ROOT / "data" / "history_map_index.json").open("r", encoding="utf-8") as f:
+        index = json.load(f)
+    bad_urls = [
+        entry.get("url", "")
+        for entry in index.get("entries", [])
+        if "https://history-map.osgeo.cn/#/" not in entry.get("url", "")
+    ]
+    if not bad_urls:
+        print("✓ 左图右史索引使用可分享 hash route，避免直连 404")
+    else:
+        print(f"✗ 左图右史索引存在非 hash route: {bad_urls[:3]}")
+        ok = False
+
+    needs_admin = resolve_history_map_link("济南", 1582, None, dynasty="明")
+    if needs_admin["status"] == "needs_admin":
+        print("✓ 缺少一级行政区时不会用现代省份反推")
+    else:
+        print(f"✗ 缺少 admin 未 fail-closed: {needs_admin}")
+        ok = False
+
+    mismatch = resolve_history_map_link("济南", 1582, "山东", dynasty="清")
+    if mismatch["status"] == "period_mismatch":
+        print("✓ 年份与朝代提示冲突时拒绝链接")
+    else:
+        print(f"✗ 时代冲突未拒绝: {mismatch}")
+        ok = False
+
+    missing_admin = resolve_history_map_link("济南", 1582, "不存在道", dynasty="明")
+    if missing_admin["status"] == "not_found":
+        print("✓ 一级区划标签不匹配时不猜地图")
+    else:
+        print(f"✗ 不存在区划未拒绝: {missing_admin}")
+        ok = False
+
+    shanxi = resolve_history_map_link("太原", 1582, "山西", dynasty="明")
+    shaanxi = resolve_history_map_link("西安", 1582, "陕西", dynasty="明")
+    if (
+        shanxi["status"] == "resolved"
+        and shanxi["url"].endswith("sec=sec09_shanxi")
+        and shaanxi["status"] == "resolved"
+        and shaanxi["url"].endswith("sec=sec12_shanxi")
+        and shanxi["url"] != shaanxi["url"]
+    ):
+        print("✓ 山西/陕西不会因拼音 sec 同名而混淆")
+    else:
+        print(f"✗ 山西/陕西区分失败: 山西={shanxi} 陕西={shaanxi}")
+        ok = False
+
+    return ok
+
+
+def test_shidian_link() -> bool:
+    """Test Shidian Guji result parsing and verification offline."""
+    print("\n测试8: 识典古籍原文链接验证...")
+    from shidian_link import ShidianLinkError, find_shidian_link
+
+    fixture_html = """
+    <html><body>
+      <a href="/zh/book/WEI001/chapter/cuihao">
+        崔浩字伯渊清河人也 白马公玄伯之长子 《魏书》 卷三五 崔浩传
+      </a>
+      <a href="/zh/book/SONG001/chapter/other">
+        王安石临川人 《宋史》 卷三二七 王安石传
+      </a>
+    </body></html>
+    """
+    ok = True
+
+    resolved = find_shidian_link(
+        "崔浩字伯渊清河人也",
+        "《魏书》卷三五《崔浩传》",
+        keyword="崔浩",
+        html=fixture_html,
+    )
+    if resolved["status"] == "resolved" and resolved["url"] == "https://www.shidianguji.com/zh/book/WEI001/chapter/cuihao":
+        print("✓ HTML fixture 中的引文/出处匹配到精确章节链接")
+    else:
+        print(f"✗ 识典精确链接匹配失败: {resolved}")
+        ok = False
+
+    not_found = find_shidian_link(
+        "魏主大怒诏浩诛之",
+        "《魏书》卷三五《崔浩传》",
+        keyword="崔浩",
+        html=fixture_html,
+    )
+    if not_found["status"] == "not_found" and not_found["url"] is None and not_found["search_url"].endswith("/%E5%B4%94%E6%B5%A9"):
+        print("✓ 未验证时只给检索页 fallback，不标为原文链接")
+    else:
+        print(f"✗ 识典未验证 fallback 失败: {not_found}")
+        ok = False
+
+    try:
+        find_shidian_link("短引", "《魏书》卷三五《崔浩传》", keyword="x" * 65, html=fixture_html)
+    except ShidianLinkError:
+        print("✓ 过长关键词会被拒绝")
+    else:
+        print("✗ 过长关键词未被拒绝")
+        ok = False
+
+    return ok
+
+
 def main() -> int:
     os.chdir(ROOT)
     print("=" * 60)
@@ -441,6 +579,8 @@ def main() -> int:
         ("年号换算", test_dynasty_converter),
         ("EPUB检索", test_epub_search),
         ("古地名映射", test_place_resolver),
+        ("左图右史链接", test_history_map_link),
+        ("识典链接", test_shidian_link),
     ]
 
     results = []

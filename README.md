@@ -14,6 +14,8 @@
 | cnkgraph 古籍 API | HTTP 接口 [open.cnkgraph.com](https://open.cnkgraph.com/swagger) | 古籍原文片段、诗词、人物、书目、年号纪年换算 |
 | 史料学 EPUB | `books/` 本地 EPUB + SQLite FTS 缓存 | 搜集史料前判断检索方向 |
 | CHGIS/TGAZ + `cnmaps-data` | TGAZ HTTP API + 本地现代行政区边界 | 古地名坐标查询与现代省/市/区县反查 |
+| 左图右史 | [history-map.osgeo.cn](https://history-map.osgeo.cn/) + `data/history_map_index.json` | 同一时代、同一一级行政区历史地图链接 |
+| 识典古籍 | [shidianguji.com/zh/search](https://www.shidianguji.com/zh/search) | 原文短引的可验证章节链接 |
 
 辞典文件需自行获取放到 `dict/历史辞典4合1.mdx`。cnkgraph API 仅限非商业用途。
 
@@ -59,7 +61,7 @@ cd /Users/zhi.q/HistoryAgentSkills
 ```
 
 Claude Code 识别为中国历史问题后会自动触发本 skill，按 `SKILL.md` 工作流答题：查辞典 → 查 cnkgraph 古籍片段 → 标书名+章节名 → 补全六类细节（时间、地点、相关人物、起因、经过、结果）。
-若材料或草稿答案中出现年号纪年，会通过 cnkgraph Calendar API 换算为公元纪年；若最终回答保留古地名，会先列出地名清单，通过 CHGIS/TGAZ + 现代边界库逐一查询今地，并在正文首次出现处自然括注，如“深州乐寿（今河北省沧州市献县）”；搜集史料前可先检索本地史料学 EPUB 判断方向。
+若材料或草稿答案中出现年号纪年，会通过 cnkgraph Calendar API 换算为公元纪年；若最终回答保留古地名，会先列出地名清单，通过 CHGIS/TGAZ + 现代边界库逐一查询今地，并在正文首次出现处自然括注，如“深州乐寿（今河北省沧州市献县）”；若辞典/原文能确认同代一级行政区，会附左图右史地图链接；原文短引能在识典古籍中验证时，会附识典原文章节链接。史料原文与现代汉语译文必须分别另起一段，不混在正文叙述里。搜集史料前可先检索本地史料学 EPUB 判断方向。
 
 ### 方式 2：`/history` 斜杠命令
 
@@ -95,6 +97,15 @@ venv/bin/python scripts/dynasty_converter.py "唐 天宝三载" --json
 # 古地名今地映射（TGAZ 坐标 + 现代行政边界反查）
 venv/bin/python scripts/place_resolver.py "顺天府" --year 1800
 venv/bin/python scripts/place_resolver.py "长安" --year 755 --json
+
+# 左图右史同代一级行政区地图链接（admin 必须由辞典/原文确认）
+venv/bin/python scripts/history_map_link.py --place "济南" --year 1582 --dynasty "明" --admin "山东布政司" --json
+
+# 刷新左图右史索引；输出浏览器可打开的 hash route（/#/pageNN/html?...）
+venv/bin/python scripts/update_history_map_index.py
+
+# 识典古籍原文章节链接验证
+venv/bin/python scripts/shidian_link.py --source "《魏书》卷三五《崔浩传》" --quote "崔浩字伯渊清河人也" --keyword "崔浩" --json
 
 # 检索本地史料学 EPUB（只作搜集方向参考）
 venv/bin/python scripts/book_search.py "甲骨文" --limit 5
@@ -144,7 +155,13 @@ HistoryAgentSkills/
 │   ├── history_query.py            # 综合查询脚本（史料方向 + 年号 + 辞典 + API）
 │   ├── dynasty_converter.py        # 通过 cnkgraph Calendar API 换算年号纪年
 │   ├── place_resolver.py           # CHGIS/TGAZ 古地名今地映射
+│   ├── history_map_link.py         # 左图右史同代一级行政区链接
+│   ├── shidian_link.py             # 识典古籍原文章节链接验证
+│   ├── update_history_map_index.py # 刷新左图右史路由索引
 │   └── book_search.py              # EPUB 全文检索器
+│
+├── data/
+│   └── history_map_index.json      # 左图右史精简 route 索引
 │
 ├── HISTORICAL_SOURCES_GUIDE.md     # 二十四史引用指南
 ├── COMMON_MISTAKES.md              # 历史踩坑记录（修改规则前必读）
@@ -157,12 +174,14 @@ HistoryAgentSkills/
 
 1. **必查两边**：辞典 + cnkgraph，缺一不可。只查辞典作答 = 违规。
 2. **史料引用必须包含书名 + 章节名**：✅《魏书》卷三五《崔浩传》｜❌《魏书》记载｜❌ 据史书记载
-3. **最终回答必须有史料原文短引**：人物、事件、制度类回答不能只给出处或白话概括；短引后要给现代汉语释义
+3. **最终回答必须有史料原文短引和译文**：人物、事件、制度类回答不能只给出处或白话概括；原文和现代汉语译文必须分别另起一段
 4. **必须补全六类细节**：时间、地点、相关人物、起因、经过、结果
 5. **年号纪年必须保留并换算**：如天宝十四载 → 天宝十四载（公元755年）；不得只写公元年替代史料年号
 6. **古地名首次出现必须标注今地**：凡最终回答保留顺天府、晋阳、长安、凤翔等古地名，先建清单，查 CHGIS/TGAZ 并用现代边界反查；正文首次出现处必须自然括注，如“深州乐寿（今河北省沧州市献县）”，不输出内部技术依据，不等同古今辖境，也不能只在文末补地点清单
-7. **EPUB 只作方向**：本地史料学书籍可帮助推断应查哪些史料，但不能替代辞典与古籍原文
-8. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
+7. **左图右史只给同代同一级行政区链接**：必须先由辞典/原文确认历史一级区划，不能用现代省份反推；匹配不到就不猜；链接必须来自 `data/history_map_index.json` 中的 `/#/pageNN/html?...` hash route，不手写 `/pageNN/html?...` 直连路径
+8. **识典原文链接必须验证**：只有短引与出处能匹配到章节页时才写“识典原文”；检索页只能作为 fallback 线索，不能冒充原文链接
+9. **EPUB 只作方向**：本地史料学书籍可帮助推断应查哪些史料，但不能替代辞典与古籍原文
+10. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
 
 详细的反例与正例见 [COMMON_MISTAKES.md](COMMON_MISTAKES.md)。
 
@@ -192,6 +211,8 @@ HistoryAgentSkills/
 - ✅ 关键词控制 2–6 字，超过 8 字 cnkgraph 常 404；复杂问题用多次短查询交叉验证
 - ✅ 最终答案要保留关键史料原文短引和年号纪年；不要用过去回答或辞典摘要替代重新整理
 - ✅ 古地名今地映射使用 `scripts/place_resolver.py`；最终回答中保留的每个古地名，首次出现处都要括注今地；如果返回歧义、无坐标或无边界命中，必须用自然语言如实说明，不输出脚本状态码或内部实现细节
+- ✅ 左图右史链接使用 `scripts/history_map_link.py`；`--admin` 必须是辞典/原文确认的同时代一级行政区，脚本返回 `resolved` 才能写进答案
+- ✅ 识典原文链接使用 `scripts/shidian_link.py`；脚本返回 `resolved` 才能写 `[识典原文](...)`，未验证时不要把检索页当章节链接
 - ✅ 修改任何核心规则前，先看 [COMMON_MISTAKES.md](COMMON_MISTAKES.md) 历史踩坑
 
 ---
