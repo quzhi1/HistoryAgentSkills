@@ -30,7 +30,7 @@ cd /Users/zhi.q/HistoryAgentSkills
 ./setup_venv.sh
 ```
 
-脚本会建 venv、装依赖（`mdict-utils` + `requests` + `cnmaps-data`）、跑一次自检。完成后 `venv/bin/mdict` 和 `venv/bin/python` 即可直接调用，**不需要** `source venv/bin/activate`。
+脚本会建 venv、装依赖（`mdict-utils` + `requests` + `cnmaps-data` + `opencc-python-reimplemented`）、跑一次自检。完成后 `venv/bin/mdict` 和 `venv/bin/python` 即可直接调用，**不需要** `source venv/bin/activate`。
 
 ### 二、全局注册到 Claude Code（推荐）
 
@@ -179,7 +179,7 @@ HistoryAgentSkills/
 5. **年号纪年必须保留并换算**：如天宝十四载 → 天宝十四载（公元755年）；不得只写公元年替代史料年号
 6. **古地名首次出现必须标注今地**：凡最终回答保留顺天府、晋阳、长安、凤翔等古地名，先建清单，查 CHGIS/TGAZ 并用现代边界反查；正文首次出现处必须自然括注，如“深州乐寿（今河北省沧州市献县）”，不输出内部技术依据，不等同古今辖境，也不能只在文末补地点清单
 7. **左图右史只给同代同一级行政区链接**：必须先由辞典/原文确认历史一级区划，不能用现代省份反推；匹配不到就不猜；链接必须来自 `data/history_map_index.json` 中的 `/#/pageNN/html?...` hash route，不手写 `/pageNN/html?...` 直连路径
-8. **识典原文链接必须验证**：只有短引与出处能匹配到章节页时才写“识典原文”；检索页只能作为 fallback 线索，不能冒充原文链接
+8. **识典原文链接必须验证**：只有短引与出处能匹配到章节页，且 `matched_source` 所属书名与所引原书或公认同书别名一致时，才写“识典原文”；检索页、后代类书/总集/别集/注释书/转引页只能作为线索，不能冒充原书链接
 9. **EPUB 只作方向**：本地史料学书籍可帮助推断应查哪些史料，但不能替代辞典与古籍原文
 10. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
 
@@ -212,7 +212,7 @@ HistoryAgentSkills/
 - ✅ 最终答案要保留关键史料原文短引和年号纪年；不要用过去回答或辞典摘要替代重新整理
 - ✅ 古地名今地映射使用 `scripts/place_resolver.py`；最终回答中保留的每个古地名，首次出现处都要括注今地；如果返回歧义、无坐标或无边界命中，必须用自然语言如实说明，不输出脚本状态码或内部实现细节
 - ✅ 左图右史链接使用 `scripts/history_map_link.py`；`--admin` 必须是辞典/原文确认的同时代一级行政区，脚本返回 `resolved` 才能写进答案
-- ✅ 识典原文链接使用 `scripts/shidian_link.py`；脚本返回 `resolved` 才能写 `[识典原文](...)`，未验证时不要把检索页当章节链接
+- ✅ 识典原文链接使用 `scripts/shidian_link.py`；脚本返回 `resolved` 且 `matched_source` 原书名核对通过，才能写 `[识典原文](...)`；若候选是后代转引或异书，重新收窄 `--quote` / `--keyword`，仍不能确认时不附链接
 - ✅ 修改任何核心规则前，先看 [COMMON_MISTAKES.md](COMMON_MISTAKES.md) 历史踩坑
 
 ---

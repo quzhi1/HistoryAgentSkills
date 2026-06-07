@@ -37,6 +37,13 @@ def test_imports() -> bool:
         ok = False
 
     try:
+        import opencc  # noqa: F401
+        print("✓ opencc-python-reimplemented 已安装")
+    except ImportError:
+        print("✗ opencc-python-reimplemented 未安装，请运行: ./setup_venv.sh")
+        ok = False
+
+    try:
         con = sqlite3.connect(":memory:")
         con.execute("CREATE VIRTUAL TABLE t USING fts5(x, tokenize='trigram')")
         print("✓ SQLite FTS5 trigram 可用")
@@ -553,6 +560,44 @@ def test_shidian_link() -> bool:
         print("✓ 未验证时只给检索页 fallback，不标为原文链接")
     else:
         print(f"✗ 识典未验证 fallback 失败: {not_found}")
+        ok = False
+
+    indirect_quote_html = """
+    <html><body>
+      <a href="/zh/book/ZHENGYANG/chapter/fanli">
+        史货殖传：范蠡既雪会稽之耻，乃乘扁舟浮于江湖。 《正杨》 正杨卷二
+      </a>
+    </body></html>
+    """
+    indirect = find_shidian_link(
+        "乃乘扁舟浮于江湖",
+        "《史记》卷一百二十九《货殖列传》",
+        keyword="浮于江湖",
+        html=indirect_quote_html,
+    )
+    if indirect["status"] == "not_found" and indirect["url"] is None:
+        print("✓ 后代类书转引不会冒充原书识典链接")
+    else:
+        print(f"✗ 转引误判为原文链接: {indirect}")
+        ok = False
+
+    direct_shiji_html = """
+    <html><body>
+      <a href="/zh/book/SHIJI/chapter/huozhi">
+        乃乘扁舟，浮於江湖，變名易姓，適齊，爲鴟夷子皮。 《史記》 史記一百二十九
+      </a>
+    </body></html>
+    """
+    shiji = find_shidian_link(
+        "乃乘扁舟浮于江湖变名易姓",
+        "《史记》卷一百二十九《货殖列传》",
+        keyword="乘扁舟浮于江湖",
+        html=direct_shiji_html,
+    )
+    if shiji["status"] == "resolved" and shiji["url"] == "https://www.shidianguji.com/zh/book/SHIJI/chapter/huozhi":
+        print("✓ 原书名匹配时可验证正史章节链接")
+    else:
+        print(f"✗ 正史原书章节链接匹配失败: {shiji}")
         ok = False
 
     try:

@@ -13,6 +13,7 @@ from typing import Any, Dict, Iterable, List, Mapping, Optional, Protocol, Seque
 from urllib.parse import quote, urljoin
 
 import requests
+from opencc import OpenCC
 
 
 BASE_URL = "https://www.shidianguji.com"
@@ -30,6 +31,14 @@ STATUS_RESOLVED = "resolved"
 STATUS_NOT_FOUND = "not_found"
 STATUS_INVALID = "invalid"
 CHAPTER_HREF_PATTERN = re.compile(r"^/(?:zh/)?book/[^/\s]+/chapter/[^?\s#]+")
+SCRIPT_NORMALIZER = OpenCC("t2s")
+SOURCE_TITLE_ALIASES = {
+    "庄子": ("南华经", "南华真经", "南华真经注疏", "庄子注", "庄子集释"),
+    "南华经": ("庄子", "南华真经", "南华真经注疏", "庄子注", "庄子集释"),
+    "南华真经": ("庄子", "南华经", "南华真经注疏", "庄子注", "庄子集释"),
+    "史记": ("太史公书", "史记集解", "史记索隐", "史记正义", "史记三家注"),
+    "汉书": ("前汉书", "汉书补注"),
+}
 
 
 class ShidianLinkError(ValueError):
@@ -95,7 +104,12 @@ def find_shidian_link(
     candidates = parse_search_results(html)
     scored = score_candidates(candidates, quote_checked, source_checked)
 
-    if scored and scored[0]["score"] >= 70 and scored[0]["quote_score"] >= 45:
+    if (
+        scored
+        and scored[0]["score"] >= 70
+        and scored[0]["quote_score"] >= 45
+        and scored[0]["primary_source_score"] >= 35
+    ):
         best = scored[0]
         return {
             "status": STATUS_RESOLVED,
@@ -185,19 +199,29 @@ def score_candidates(candidates: Iterable[Mapping[str, str]], quote_text: str, s
     for candidate in candidates:
         text = candidate.get("text") or ""
         quote_score = text_overlap_score(quote_text, text)
+        primary_source_score = primary_source_match_score(source_terms, text)
         source_score = source_match_score(source_terms, text)
-        total = quote_score + source_score
-        if quote_score >= 45 or source_score > 0:
+        total = quote_score + primary_source_score + min(source_score, 20)
+        if quote_score >= 45 or primary_source_score > 0 or source_score > 0:
             scored.append(
                 {
                     "url": candidate.get("url"),
                     "text": text,
                     "score": total,
                     "quote_score": quote_score,
+                    "primary_source_score": primary_source_score,
                     "source_score": source_score,
                 }
             )
-    scored.sort(key=lambda item: (item["score"], item["quote_score"], item["source_score"]), reverse=True)
+    scored.sort(
+        key=lambda item: (
+            item["primary_source_score"],
+            item["score"],
+            item["quote_score"],
+            item["source_score"],
+        ),
+        reverse=True,
+    )
     return scored
 
 
@@ -224,6 +248,42 @@ def source_match_score(source_terms: Sequence[str], text: str) -> int:
     return score
 
 
+def primary_source_match_score(source_terms: Sequence[str], text: str) -> int:
+    """Prefer the chapter whose owning book matches the cited primary source.
+
+    Shidian search can return later anthologies or reference works that quote the
+    same sentence. Those are useful clues, but they must not be surfaced as the
+    original source link.
+    """
+
+    if not source_terms:
+        return 0
+    accepted_titles = source_title_variants(source_terms[0])
+    candidate_titles = extract_source_terms(text)
+    if candidate_titles:
+        for title in candidate_titles:
+            candidate_norm = normalize_for_match(title)
+            if any(candidate_norm == accepted or candidate_norm.startswith(accepted) for accepted in accepted_titles):
+                return 70
+        return 0
+
+    text_norm = normalize_for_match(text)
+    if any(accepted in text_norm for accepted in accepted_titles):
+        return 45
+    return 0
+
+
+def source_title_variants(title: str) -> set[str]:
+    normalized_title = normalize_for_match(title)
+    variants = {normalized_title}
+    for canonical, aliases in SOURCE_TITLE_ALIASES.items():
+        normalized_group = {normalize_for_match(canonical)}
+        normalized_group.update(normalize_for_match(alias) for alias in aliases)
+        if normalized_title in normalized_group:
+            variants.update(normalized_group)
+    return {variant for variant in variants if variant}
+
+
 def extract_source_terms(source: str) -> List[str]:
     terms = re.findall(r"《([^》]+)》", source)
     if not terms:
@@ -232,8 +292,7 @@ def extract_source_terms(source: str) -> List[str]:
 
 
 def normalize_for_match(text: str) -> str:
-    normalized = unicodedata.normalize("NFKC", text)
-    normalized = normalized.translate(str.maketrans({"書": "书", "傳": "传", "紀": "纪", "卷": "卷"}))
+    normalized = SCRIPT_NORMALIZER.convert(unicodedata.normalize("NFKC", text))
     return re.sub(r"[\s,，、.。:：;；!?！？()（）《》〈〉\[\]【】\"'“”‘’\-_/·]+", "", normalized)
 
 
