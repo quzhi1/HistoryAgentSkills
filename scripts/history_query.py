@@ -19,11 +19,12 @@ from typing import Optional, Dict, Any, List
 
 from book_search import BookSearchError, search_books
 from dynasty_converter import EraConversionError, convert_era_expression
+from venv_utils import venv_executable
 
 # 配置
 ROOT = Path(__file__).resolve().parents[1]
 DICT_PATH = ROOT / "dict" / "历史辞典4合1.mdx"
-MDICT_BIN = ROOT / "venv" / "bin" / "mdict"
+MDICT_BIN = venv_executable(ROOT, "mdict", must_exist=False)
 API_BASE_URL = "https://open.cnkgraph.com/api"
 TIMEOUT = 30
 

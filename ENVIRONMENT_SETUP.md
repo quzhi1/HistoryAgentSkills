@@ -17,66 +17,73 @@ mdict: command not found
 ### 原因
 
 这个错误通常是因为：
-1. ❌ **未激活虚拟环境**（最常见）
+1. ❌ 没有通过项目 venv 或跨平台 runner 调用 `mdict`
 2. ❌ 虚拟环境损坏
 3. ❌ 依赖包未安装
 
 ## 解决方案
 
-### 方案1：激活虚拟环境（推荐）⭐
+### 方案1：使用跨平台 runner（推荐）⭐
 
 ```bash
 # 1. 进入项目目录
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 
-# 2. 激活虚拟环境
-source venv/bin/activate
+# 2. 验证 mdict 是否可用
+python scripts/run_in_venv.py mdict --version
 
-# 3. 验证 mdict 是否可用
-which mdict
-mdict --version
-
-# 4. 现在可以查询了
-python dict/scripts/query_dict.py "李白"
+# 3. 现在可以查询了
+python scripts/run_in_venv.py mdict -q "李白" dict/历史辞典4合1.mdx
 ```
 
 **成功标志**：
-- 命令行前面出现 `(venv)` 标记
-- `which mdict` 返回 `.../venv/bin/mdict`
+- `mdict --version` 正常返回
+- 不需要激活虚拟环境
 
-### 方案2：使用完整路径
+### 方案2：使用 venv 完整路径
 
-如果不想激活虚拟环境，可以直接使用完整路径：
+macOS/Linux:
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-
-# 直接使用虚拟环境中的 mdict
+cd /path/to/HistoryAgentSkills
 venv/bin/mdict -q "李白" dict/历史辞典4合1.mdx
+```
+
+Windows PowerShell:
+
+```powershell
+cd C:\path\to\HistoryAgentSkills
+.\venv\Scripts\mdict.exe -q "李白" dict\历史辞典4合1.mdx
 ```
 
 ### 方案3：重新安装（如果虚拟环境损坏）
 
+macOS/Linux:
+
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-
-# 删除旧的虚拟环境
-rm -rf venv
-
-# 重新创建并安装
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-
-# 验证
-mdict --version
+cd /path/to/HistoryAgentSkills
+./setup_venv.sh
 ```
 
-### 方案4：使用自动设置脚本
+Windows PowerShell:
+
+```powershell
+cd C:\path\to\HistoryAgentSkills
+.\setup_venv.ps1
+```
+
+跨平台通用方式：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-./setup_venv.sh
+python setup_venv.py --clear
+```
+
+### 方案4：手动激活虚拟环境（可选）
+
+```bash
+cd /path/to/HistoryAgentSkills
+source venv/bin/activate       # macOS/Linux
+venv\Scripts\activate          # Windows
 ```
 
 ## 验证环境
@@ -84,30 +91,25 @@ cd /Users/zhi.q/HistoryAgentSkills
 ### 快速检查
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 
 # 检查虚拟环境是否存在
 ls -d venv
 
-# 检查 mdict 是否在虚拟环境中
-ls venv/bin/mdict
-
-# 激活并测试
-source venv/bin/activate
-mdict --version
+# 检查 mdict 是否可用
+python scripts/run_in_venv.py mdict --version
 ```
 
 ### 完整测试
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-source venv/bin/activate
+cd /path/to/HistoryAgentSkills
 
 # 运行系统测试
-python test_system.py
+python scripts/run_in_venv.py test_system.py
 
 # 测试辞典查询
-python dict/scripts/query_dict.py "李白"
+python scripts/run_in_venv.py mdict -q "李白" dict/历史辞典4合1.mdx
 ```
 
 ## 在 Cursor Agent 中使用
@@ -117,11 +119,11 @@ python dict/scripts/query_dict.py "李白"
 当 Agent 需要查询辞典时，应该：
 
 ```bash
-# 方式1：激活虚拟环境后查询
-cd /Users/zhi.q/HistoryAgentSkills && source venv/bin/activate && mdict -q "李白" dict/历史辞典4合1.mdx
+# 方式1：跨平台 runner
+cd /path/to/HistoryAgentSkills && python scripts/run_in_venv.py mdict -q "李白" dict/历史辞典4合1.mdx
 
-# 方式2：使用完整路径
-cd /Users/zhi.q/HistoryAgentSkills && venv/bin/mdict -q "李白" dict/历史辞典4合1.mdx
+# 方式2：macOS/Linux 完整路径
+cd /path/to/HistoryAgentSkills && venv/bin/mdict -q "李白" dict/历史辞典4合1.mdx
 ```
 
 ### 错误的做法
@@ -137,7 +139,7 @@ mdict -q "李白" dict/历史辞典4合1.mdx  # 错误！
 
 - [ ] 是否在项目根目录？
   ```bash
-  pwd  # 应该是 /Users/zhi.q/HistoryAgentSkills
+  pwd  # 应该是 /path/to/HistoryAgentSkills
   ```
 
 - [ ] 虚拟环境是否存在？
@@ -189,7 +191,7 @@ python dict/scripts/query_dict.py "李白"
 
 **解决**：
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 pwd  # 确认目录
 ls dict/*.mdx  # 确认文件存在
 ```
@@ -241,7 +243,7 @@ HistoryAgentSkills/
 
 ```bash
 # 每次开始工作
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 source venv/bin/activate
 
 # ... 工作 ...
@@ -267,14 +269,14 @@ if not shutil.which('mdict'):
 
 ```bash
 # 总是包含虚拟环境激活
-cd /Users/zhi.q/HistoryAgentSkills && source venv/bin/activate && mdict -q "关键词" dict/历史辞典4合1.mdx
+cd /path/to/HistoryAgentSkills && source venv/bin/activate && mdict -q "关键词" dict/历史辞典4合1.mdx
 ```
 
 ## 故障排查流程
 
 ```
 1. 是否在项目目录？
-   ├─ 否 → cd /Users/zhi.q/HistoryAgentSkills
+   ├─ 否 → cd /path/to/HistoryAgentSkills
    └─ 是 → 继续
 
 2. 虚拟环境是否存在？
@@ -298,7 +300,7 @@ cd /Users/zhi.q/HistoryAgentSkills && source venv/bin/activate && mdict -q "关�
 
 ```bash
 # 激活环境
-cd /Users/zhi.q/HistoryAgentSkills && source venv/bin/activate
+cd /path/to/HistoryAgentSkills && source venv/bin/activate
 
 # 查询辞典
 mdict -q "关键词" dict/历史辞典4合1.mdx

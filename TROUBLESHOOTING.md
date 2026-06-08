@@ -112,7 +112,7 @@ Permission denied
 
 3. 确保在项目根目录运行
    ```bash
-   cd /Users/zhi.q/HistoryAgentSkills
+   cd /path/to/HistoryAgentSkills
    python dict/scripts/query_dict.py "李白"
    ```
 

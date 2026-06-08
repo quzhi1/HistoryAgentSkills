@@ -18,6 +18,8 @@ SCRIPTS_DIR = ROOT / "scripts"
 if str(SCRIPTS_DIR) not in sys.path:
     sys.path.insert(0, str(SCRIPTS_DIR))
 
+from venv_utils import venv_executable  # noqa: E402
+
 
 def test_imports() -> bool:
     """Check Python and command dependencies."""
@@ -53,7 +55,7 @@ def test_imports() -> bool:
         print(f"✗ SQLite FTS5 trigram 不可用: {exc}")
         ok = False
 
-    mdict_bin = ROOT / "venv" / "bin" / "mdict"
+    mdict_bin = venv_executable(ROOT, "mdict", must_exist=False)
     if not mdict_bin.exists():
         print(f"✗ mdict 不存在: {mdict_bin}，请运行 ./setup_venv.sh")
         return False
@@ -84,11 +86,19 @@ def test_files() -> bool:
         "scripts/source_book_index.py",
         "scripts/update_history_map_index.py",
         "scripts/update_source_book_index.py",
+        "scripts/run_in_venv.py",
+        "scripts/venv_utils.py",
         "data/history_map_index.json",
         "data/source_book_index.sqlite",
+        "setup_venv.py",
         "SKILL.md",
         "AGENTS.md",
         "CLAUDE.md",
+        "install_global.py",
+        "setup_venv.sh",
+        "setup_venv.ps1",
+        "install-global.sh",
+        "install-global.ps1",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
     ]
@@ -153,16 +163,18 @@ def test_workflow_guardrails() -> bool:
         "CLAUDE.md": [
             "单一真理源",
             "SKILL.md",
-            "venv/bin/mdict -q",
+            "venv/bin/mdict",
+            "venv\\Scripts",
             "不要 `source",
-            "venv/bin/python test_system.py",
+            "test_system.py",
         ],
         "AGENTS.md": [
             "单一真理源",
             "SKILL.md",
-            "venv/bin/mdict -q",
+            "venv/bin/mdict",
+            "venv\\Scripts",
             "不要 `source",
-            "venv/bin/python test_system.py",
+            "test_system.py",
         ],
         "COMMON_MISTAKES.md": [
             "错误示例7",
@@ -177,6 +189,7 @@ def test_workflow_guardrails() -> bool:
             "只给史料出处",
         ],
         ".claude/commands/history.md": [
+            "scripts/run_in_venv.py",
             "查询被引用史料说明",
             "<史料书名>",
             "被引史料说明",
@@ -199,9 +212,79 @@ def test_workflow_guardrails() -> bool:
     return ok
 
 
+def test_cross_platform_installation() -> bool:
+    """Check setup/install scripts avoid hard-coded platform paths."""
+    print("\n测试4: 跨平台安装脚本...")
+    from tempfile import TemporaryDirectory
+
+    from install_global import install_global
+    from venv_utils import display_venv_command
+
+    ok = True
+    windows_python = venv_executable(ROOT, "python", platform="nt", must_exist=False)
+    windows_mdict = venv_executable(ROOT, "mdict", platform="nt", must_exist=False)
+    posix_python = venv_executable(ROOT, "python", platform="posix", must_exist=False)
+    if (
+        windows_python.as_posix().endswith("venv/Scripts/python.exe")
+        and windows_mdict.as_posix().endswith("venv/Scripts/mdict.exe")
+        and posix_python.as_posix().endswith("venv/bin/python")
+        and display_venv_command("python", platform="nt") == "venv\\Scripts\\python.exe"
+    ):
+        print("✓ venv 路径会按 Windows/POSIX 分别解析")
+    else:
+        print(
+            "✗ venv 路径解析错误: "
+            f"win_python={windows_python}, win_mdict={windows_mdict}, posix_python={posix_python}"
+        )
+        ok = False
+
+    forbidden = "/Users/zhi.q/HistoryAgentSkills"
+    checked_files = [
+        "setup_venv.sh",
+        "install-global.sh",
+        "setup_venv.py",
+        "install_global.py",
+        "setup_venv.ps1",
+        "install-global.ps1",
+        ".claude/commands/history.md",
+        ".claude/agents/history-fact-checker.md",
+    ]
+    for filename in checked_files:
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        if forbidden in text:
+            print(f"✗ {filename} 仍含旧的硬编码项目目录")
+            ok = False
+    if ok:
+        print("✓ 安装入口和 Claude 模板不再硬编码本机项目目录")
+
+    if "source venv/bin/activate" in (ROOT / "setup_venv.sh").read_text(encoding="utf-8"):
+        print("✗ setup_venv.sh 仍依赖 POSIX activate 路径")
+        ok = False
+    else:
+        print("✓ setup_venv.sh 不再依赖 source venv/bin/activate")
+
+    with TemporaryDirectory() as tmpdir:
+        outputs = install_global(project_root=ROOT, claude_dir=Path(tmpdir))
+        skill_text = outputs["skill"].read_text(encoding="utf-8")
+        command_text = outputs["command"].read_text(encoding="utf-8")
+        agent_text = outputs["agent"].read_text(encoding="utf-8")
+        if (
+            str(ROOT) in skill_text
+            and str(ROOT / "scripts" / "run_in_venv.py") in command_text
+            and "全局安装信息" in agent_text
+            and "__PROJECT_ROOT__" not in command_text
+        ):
+            print("✓ 全局安装会按当前项目目录生成 skill/command/agent")
+        else:
+            print("✗ 全局安装生成物缺少当前项目目录或 runner")
+            ok = False
+
+    return ok
+
+
 def test_scripts_compile() -> bool:
     """Check Python scripts compile."""
-    print("\n测试4: 检查脚本语法...")
+    print("\n测试5: 检查脚本语法...")
     scripts = [
         "dict/scripts/query_dict.py",
         "cnkgraph/scripts/query_api.py",
@@ -215,9 +298,13 @@ def test_scripts_compile() -> bool:
         "scripts/source_book_index.py",
         "scripts/update_history_map_index.py",
         "scripts/update_source_book_index.py",
+        "scripts/run_in_venv.py",
+        "scripts/venv_utils.py",
+        "setup_venv.py",
+        "install_global.py",
     ]
     result = subprocess.run(
-        [str(ROOT / "venv" / "bin" / "python"), "-m", "py_compile", *scripts],
+        [str(venv_executable(ROOT, "python")), "-m", "py_compile", *scripts],
         cwd=ROOT,
         capture_output=True,
         text=True,
@@ -315,7 +402,7 @@ def _multi_calendar_payload(year: int, date_era_name: str | None, rows, era_name
 
 def test_dynasty_converter() -> bool:
     """Test reign-year conversion with fixtures."""
-    print("\n测试5: 年号换算...")
+    print("\n测试6: 年号换算...")
     from dynasty_converter import convert_era_expression
 
     ok = True
@@ -353,7 +440,7 @@ def test_dynasty_converter() -> bool:
 
 def test_epub_search() -> bool:
     """Test local EPUB indexing and searching."""
-    print("\n测试6: EPUB 全文检索...")
+    print("\n测试7: EPUB 全文检索...")
     from book_search import search_books
 
     try:
@@ -497,7 +584,7 @@ def _square(min_x: float, min_y: float, max_x: float, max_y: float):
 
 def test_place_resolver() -> bool:
     """Test historical placename to modern administration resolution offline."""
-    print("\n测试7: 古地名现代行政区划映射...")
+    print("\n测试8: 古地名现代行政区划映射...")
     from place_resolver import BoundaryRecord, ModernBoundaryResolver, resolve_place
 
     boundary_resolver = ModernBoundaryResolver(
@@ -596,7 +683,7 @@ def test_place_resolver() -> bool:
 
 def test_history_map_link() -> bool:
     """Test left-map/right-history route matching with the static index."""
-    print("\n测试8: 左图右史同代一级区划链接...")
+    print("\n测试9: 左图右史同代一级区划链接...")
     from history_map_link import resolve_history_map_link, transition_map_pages
 
     ok = True
@@ -711,7 +798,7 @@ def test_history_map_link() -> bool:
 
 def test_place_admin_resolver() -> bool:
     """Test reverse modern-location to historical admin resolution offline."""
-    print("\n测试9: 现代地点线索反查历史地名与地图区划...")
+    print("\n测试10: 现代地点线索反查历史地名与地图区划...")
     from place_admin_resolver import resolve_place_admin
     from place_resolver import BoundaryRecord, ModernBoundaryResolver
 
@@ -842,7 +929,7 @@ def test_place_admin_resolver() -> bool:
 
 def test_source_book_index() -> bool:
     """Test source book index parsing and lookup offline."""
-    print("\n测试10: 识典/cnkgraph 书目索引...")
+    print("\n测试11: 识典/cnkgraph 书目索引...")
     from tempfile import TemporaryDirectory
 
     from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_entries, lookup_title_variants
@@ -981,7 +1068,7 @@ def test_source_book_index() -> bool:
 
 def test_shidian_link() -> bool:
     """Test Shidian Guji result parsing and verification offline."""
-    print("\n测试11: 识典古籍原文链接验证...")
+    print("\n测试12: 识典古籍原文链接验证...")
     from shidian_link import ShidianLinkError, find_shidian_link, source_lookup_titles
 
     fixture_html = """
@@ -1112,6 +1199,7 @@ def main() -> int:
         ("依赖", test_imports),
         ("文件完整性", test_files),
         ("工作流强制门禁", test_workflow_guardrails),
+        ("跨平台安装", test_cross_platform_installation),
         ("脚本语法", test_scripts_compile),
         ("年号换算", test_dynasty_converter),
         ("EPUB检索", test_epub_search),

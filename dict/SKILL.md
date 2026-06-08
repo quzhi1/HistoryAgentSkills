@@ -15,16 +15,16 @@ description: 查询权威的中国历史大辞典，获取历史人物、事件�
 
 ### 0. 环境准备⚠️
 
-**重要**：Codex 调用时直接使用 venv 二进制，不要 `source` 激活。
+**重要**：Codex 调用时直接使用 venv 二进制或跨平台 runner，不要 `source` 激活。macOS/Linux 可用 `venv/bin/mdict`；Windows PowerShell 对应用 `venv\Scripts\mdict.exe`。
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
+cd /path/to/HistoryAgentSkills
+python scripts/run_in_venv.py mdict -q "关键词" dict/历史辞典4合1.mdx
 ```
 
 **常见错误**："mdict: command not found"
-- **原因**：没有使用 `venv/bin/mdict` 或虚拟环境未建好
-- **解决**：检查 `venv/bin/mdict`，不存在则运行 `./setup_venv.sh`
+- **原因**：没有使用项目 venv 的 `mdict` 或虚拟环境未建好
+- **解决**：检查 venv 内 `mdict`，不存在则运行 `./setup_venv.sh`（macOS/Linux）或 `.\setup_venv.ps1`（Windows）
 
 详见：[环境配置指南](../ENVIRONMENT_SETUP.md)
 
@@ -33,7 +33,8 @@ venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 首次使用需要安装 mdict-utils：
 
 ```bash
-./setup_venv.sh
+./setup_venv.sh      # macOS/Linux
+.\setup_venv.ps1     # Windows PowerShell
 ```
 
 ### 2. 查询词条
@@ -41,8 +42,8 @@ venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 使用完整路径查询（不需要激活）：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
+cd /path/to/HistoryAgentSkills
+python scripts/run_in_venv.py mdict -q "关键词" dict/历史辞典4合1.mdx
 ```
 
 ### 3. 查询流程

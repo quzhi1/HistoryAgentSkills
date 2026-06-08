@@ -12,75 +12,63 @@
 
 ## 快速开始
 
-### 1. 创建虚拟环境
+### 1. 自动创建虚拟环境并安装依赖
+
+macOS / Linux:
 
 ```bash
-# 进入项目目录
-cd /Users/zhi.q/HistoryAgentSkills
-
-# 创建虚拟环境（只需执行一次）
-python3 -m venv venv
+cd /path/to/HistoryAgentSkills
+./setup_venv.sh
 ```
 
-这会创建一个名为 `venv` 的文件夹，包含独立的Python环境。
+Windows PowerShell:
 
-### 2. 激活虚拟环境
-
-**macOS/Linux：**
-```bash
-source venv/bin/activate
+```powershell
+cd C:\path\to\HistoryAgentSkills
+.\setup_venv.ps1
 ```
 
-**Windows：**
-```cmd
-venv\Scripts\activate
-```
-
-**激活成功后**，命令行前面会出现 `(venv)` 标记：
-```
-(venv) zhi.q@MacBook HistoryAgentSkills %
-```
-
-### 3. 安装依赖
-
-在激活的虚拟环境中安装项目依赖：
+跨平台通用方式：
 
 ```bash
-pip install -r requirements.txt
+python setup_venv.py
 ```
 
-### 4. 使用项目
+这会创建一个名为 `venv` 的文件夹，包含独立的 Python 环境，并安装 `requirements.txt` 里的依赖。
 
-在虚拟环境激活的状态下使用项目：
+### 2. 使用项目
 
 ```bash
-# 测试系统
-python test_system.py
+# 跨平台 runner，不需要激活虚拟环境
+python scripts/run_in_venv.py test_system.py
 
 # 查询辞典
-python dict/scripts/query_dict.py "李白"
+python scripts/run_in_venv.py mdict -q "李白" dict/历史辞典4合1.mdx
 
 # API查询
-python cnkgraph/scripts/query_api.py poetry --author 李白
+python scripts/run_in_venv.py cnkgraph/scripts/query_api.py poetry --author 李白
 ```
 
-### 5. 退出虚拟环境
+macOS/Linux 也可以直接调用 `venv/bin/python` / `venv/bin/mdict`；Windows PowerShell 对应用 `venv\Scripts\python.exe` / `venv\Scripts\mdict.exe`。
 
-使用完毕后，可以退出虚拟环境：
+### 3. 是否需要激活虚拟环境？
+
+不需要。项目脚本和文档推荐直接调用 venv 内的可执行文件或 `scripts/run_in_venv.py`。如果你手工激活也可以：
 
 ```bash
-deactivate
+source venv/bin/activate      # macOS/Linux
+venv\Scripts\activate         # Windows
 ```
 
 ## 常见问题
 
 ### Q: 需要每次都激活虚拟环境吗？
 
-A: 是的。每次打开新的终端窗口使用项目时，都需要激活虚拟环境：
+A: 不需要。推荐直接用跨平台 runner：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-source venv/bin/activate
+cd /path/to/HistoryAgentSkills
+python scripts/run_in_venv.py test_system.py
 ```
 
 ### Q: 如何判断虚拟环境是否已激活？
@@ -140,7 +128,7 @@ HistoryAgentSkills/
 
 ```bash
 # 每天开始工作
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 source venv/bin/activate
 
 # ... 工作中 ...
@@ -168,7 +156,7 @@ pip freeze > requirements.txt
 
 ```bash
 # 添加到 ~/.zshrc
-alias history-env='cd /Users/zhi.q/HistoryAgentSkills && source venv/bin/activate'
+alias history-env='cd /path/to/HistoryAgentSkills && source venv/bin/activate'
 ```
 
 然后就可以用一个命令激活：
@@ -274,7 +262,7 @@ source venv/bin/activate
 pip install -r requirements.txt
 
 # 以后每次使用
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 source venv/bin/activate
 # ... 使用项目 ...
 deactivate
