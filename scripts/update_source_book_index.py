@@ -17,7 +17,7 @@ from urllib.parse import parse_qs, quote, urljoin, urlparse
 
 import requests
 
-from source_book_index import DEFAULT_INDEX_PATH, clean_title, normalize_title
+from source_book_index import DEFAULT_INDEX_PATH, clean_title, normalize_title, short_title
 
 
 SHIDIAN_BASE_URL = "https://www.shidianguji.com"
@@ -288,17 +288,127 @@ def normalize_cnkgraph_book(raw_book: Mapping[str, Any], category: str, group: s
     }
 
 
+def normalize_existing_sources(sources: Mapping[str, Any]) -> Dict[str, Any]:
+    """Recompute normalized titles for already-crawled source payloads."""
+
+    normalized: Dict[str, Any] = {}
+    for source_name, payload in sources.items():
+        if not isinstance(payload, Mapping):
+            continue
+        source_payload = dict(payload)
+        books = payload.get("books")
+        if isinstance(books, list):
+            normalized_books = []
+            for book in books:
+                if not isinstance(book, Mapping):
+                    continue
+                normalized_book = dict(book)
+                normalized_book["title"] = clean_title(str(normalized_book.get("title") or ""))
+                normalized_book["normalized_title"] = normalize_title(str(normalized_book.get("title") or ""))
+                normalized_books.append(normalized_book)
+            source_payload["books"] = normalized_books
+            source_payload["book_count"] = len(normalized_books)
+        normalized[source_name] = source_payload
+    return normalized
+
+
+def build_crosswalk(sources: Mapping[str, Any]) -> Dict[str, Any]:
+    """Build explicit Shidian <-> cnkgraph title correspondence groups."""
+
+    grouped: Dict[str, Dict[str, List[Dict[str, Any]]]] = {}
+    for source_name in ("shidian", "cnkgraph"):
+        payload = sources.get(source_name)
+        if not isinstance(payload, Mapping):
+            continue
+        books = payload.get("books")
+        if not isinstance(books, list):
+            continue
+        for book in books:
+            if not isinstance(book, Mapping):
+                continue
+            title = str(book.get("title") or "")
+            normalized_title = normalize_title(short_title(title))
+            if not normalized_title:
+                continue
+            grouped.setdefault(normalized_title, {"shidian": [], "cnkgraph": []})[source_name].append(
+                crosswalk_book_ref(source_name, book)
+            )
+
+    entries: List[Dict[str, Any]] = []
+    for normalized_title, source_books in sorted(grouped.items()):
+        shidian_books = _dedupe_crosswalk_books(source_books["shidian"])
+        cnkgraph_books = _dedupe_crosswalk_books(source_books["cnkgraph"])
+        if not shidian_books or not cnkgraph_books:
+            continue
+        titles = sorted(
+            {
+                str(book.get("title") or "")
+                for book in [*shidian_books, *cnkgraph_books]
+                if str(book.get("title") or "")
+            }
+        )
+        entries.append(
+            {
+                "normalized_title": normalized_title,
+                "match_type": "exact_normalized_title",
+                "titles": titles,
+                "shidian": shidian_books,
+                "cnkgraph": cnkgraph_books,
+            }
+        )
+
+    return {
+        "strategy": "same normalized title after script conversion, punctuation cleanup, and display-suffix removal",
+        "entry_count": len(entries),
+        "entries": entries,
+    }
+
+
+def crosswalk_book_ref(source_name: str, book: Mapping[str, Any]) -> Dict[str, Any]:
+    """Keep crosswalk entries compact but directly usable."""
+
+    if source_name == "shidian":
+        return {
+            "title": book.get("title"),
+            "url": book.get("url"),
+            "book_id": book.get("book_id"),
+        }
+    return {
+        "title": book.get("title"),
+        "id": book.get("id"),
+        "api_url": book.get("api_url"),
+        "site_url": book.get("site_url"),
+        "author": book.get("author"),
+        "dynasty": book.get("dynasty"),
+        "categories": book.get("categories"),
+    }
+
+
+def _dedupe_crosswalk_books(books: List[Dict[str, Any]]) -> List[Dict[str, Any]]:
+    deduped: List[Dict[str, Any]] = []
+    seen = set()
+    for book in books:
+        key = str(book.get("url") or book.get("api_url") or book.get("id") or book.get("book_id") or book.get("title"))
+        if key in seen:
+            continue
+        seen.add(key)
+        deduped.append(book)
+    return deduped
+
+
 def build_index(args: argparse.Namespace) -> Dict[str, Any]:
     session = requests.Session()
     session.headers.update(REQUEST_HEADERS)
     sources: Dict[str, Any] = {}
-    if args.merge_existing and args.output.exists():
+    if (args.merge_existing or args.from_existing) and args.output.exists():
         with args.output.open("r", encoding="utf-8") as file:
             existing = json.load(file)
         if isinstance(existing, Mapping) and isinstance(existing.get("sources"), Mapping):
             sources.update(existing["sources"])
 
-    if args.source in ("all", "shidian"):
+    if args.from_existing:
+        sources = normalize_existing_sources(sources)
+    elif args.source in ("all", "shidian"):
         sources["shidian"] = fetch_shidian_books(
             session,
             timeout=args.timeout,
@@ -306,18 +416,20 @@ def build_index(args: argparse.Namespace) -> Dict[str, Any]:
             max_pages=args.max_shidian_pages,
             verbose=args.verbose,
         )
-    if args.source in ("all", "cnkgraph"):
+    if not args.from_existing and args.source in ("all", "cnkgraph"):
         sources["cnkgraph"] = fetch_cnkgraph_books(
             session,
             timeout=args.timeout,
             sleep_seconds=args.sleep,
             verbose=args.verbose,
         )
+    sources = normalize_existing_sources(sources)
 
     return {
         "schema_version": 1,
         "generated_at": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "sources": sources,
+        "crosswalk": build_crosswalk(sources),
     }
 
 
@@ -364,6 +476,7 @@ def main() -> int:
     parser.add_argument("--max-shidian-pages", type=int, help="调试用：最多抓取多少个识典 sitemap 页面")
     parser.add_argument("--pretty", action="store_true", help="用缩进格式输出 JSON")
     parser.add_argument("--merge-existing", action="store_true", help="分源刷新时保留输出文件中的其他来源")
+    parser.add_argument("--from-existing", action="store_true", help="不联网，使用输出文件中已有 sources 重建 normalized_title 和 crosswalk")
     parser.add_argument("--verbose", action="store_true", help="输出抓取进度到 stderr")
     args = parser.parse_args()
 
@@ -373,6 +486,8 @@ def main() -> int:
         parser.error("--sleep 不能为负数")
     if args.max_shidian_pages is not None and args.max_shidian_pages <= 0:
         parser.error("--max-shidian-pages 必须大于 0")
+    if args.from_existing and not args.output.exists():
+        parser.error("--from-existing 需要已有输出文件")
 
     index = build_index(args)
     write_index(index, args.output, pretty=args.pretty)

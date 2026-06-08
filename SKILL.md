@@ -43,7 +43,7 @@ description: 回答中国历史问题的专家系统。查询权威历史辞典�
 
 7. **识典古籍**（原文章节链接）
    - 搜索页：[shidianguji.com/zh/search](https://www.shidianguji.com/zh/search)
-   - 本地索引：`data/source_book_index.json` 保存识典书页与 cnkgraph 书目链接
+   - 本地索引：`data/source_book_index.json` 的 `sources` 保存两边原始书目，`crosswalk.entries` 保存识典书页与 cnkgraph 书目的显式一对多对应
    - `shidian_link.py` 会先用本地书目索引核对候选章节所属书名，再进入搜索结果打分
    - 用搜索结果中的章节链接核验短引与出处
    - 只把验证通过的章节页写成“识典原文”链接
@@ -251,7 +251,8 @@ venv/bin/python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 - **诗词/诗文**：`venv/bin/python cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月`（POST /api/Writing/Find）
 - **人物**：`venv/bin/python cnkgraph/scripts/query_api.py people --name 苏轼`（GET /api/People/{id}）
 - **古籍书目**：`venv/bin/python cnkgraph/scripts/query_api.py book --keyword 崔浩`（POST /api/Book/Search，可知哪些书含该词）
-- **全量书目索引维护**：`venv/bin/python scripts/update_source_book_index.py --pretty --verbose`（抓取识典 sitemap 与 cnkgraph `GET /api/Book/{部}/{类}`，生成 `data/source_book_index.json`）
+- **全量书目索引维护**：`venv/bin/python scripts/update_source_book_index.py --pretty --verbose`（抓取识典 sitemap 与 cnkgraph `GET /api/Book/{部}/{类}`，生成 `data/source_book_index.json`，其中 `crosswalk.entries` 为两边同名书的一对多对应）
+- **离线重建对应索引**：`venv/bin/python scripts/update_source_book_index.py --from-existing --pretty`（不联网，只用现有 `sources` 重算 `normalized_title` 与 `crosswalk`）
 
 **4.3 要补充的六类信息**
 
@@ -287,7 +288,7 @@ venv/bin/python scripts/shidian_link.py \
 - `--source` 必须是最终回答中使用的书名 + 卷章/篇名。
 - `--quote` 必须是最终回答中准备短引的原文，不要用译文或概括语句。
 - `--keyword` 优先用人名、事件名或短引中最稳定的 2–6 字关键词。
-- 脚本会自动读取 `data/source_book_index.json`，用识典书页和 cnkgraph 书目核对原书名与通行别名；不要只靠临场猜书名。若索引缺失、明显过期或用户指出链接问题，先运行 `scripts/update_source_book_index.py` 刷新索引。
+- 脚本会自动读取 `data/source_book_index.json`，优先用 `crosswalk.entries` 核对识典书页和 cnkgraph 书目的同名对应，再回退到原始 `sources`；不要只靠临场猜书名。若索引缺失、明显过期或用户指出链接问题，先运行 `scripts/update_source_book_index.py` 刷新索引。
 - 只有脚本返回 `status: “resolved”` 时，才在最终回答中写 `[识典原文](url)`。
 - 即使返回 `resolved`，也必须查看 JSON 里的 `matched_source`：候选章节所属书名必须与 `--source` 的主书名一致，或为公认同书别名/通行底本（如《庄子》与《南华经》）。若 `matched_source` 显示为后代类书、总集、别集、注释书或转引页，即使短引完全相同，也按 `not_found` 处理，重新用更精确的 `--quote` / `--keyword` 检索；仍不能确认原书时，最终回答不得附该链接。
 - 如果返回 `not_found`、`invalid` 或查询失败，**不得立刻把无链接短引放进最终回答**。必须先执行“二次验证”：

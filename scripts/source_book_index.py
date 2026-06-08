@@ -17,7 +17,7 @@ from opencc import OpenCC
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_INDEX_PATH = ROOT / "data" / "source_book_index.json"
 SCRIPT_NORMALIZER = OpenCC("t2s")
-TITLE_SUFFIX_RE = re.compile(r"(?:全文原文|原文|全文)\s*$")
+TITLE_SUFFIX_RE = re.compile(r"\s*(?:全文原文及译文|全文原文及譯文|全文及译文|全文及譯文|全文原文|原文|全文)\s*$")
 TITLE_NOISE_RE = re.compile(r"[\s,，、.。:：;；!?！？()（）《》〈〉\[\]【】\"'“”‘’\-_/·]+")
 
 
@@ -76,6 +76,7 @@ def lookup_title_entries(
     *,
     index: Optional[Mapping[str, Any]] = None,
     sources: Sequence[str] = ("shidian", "cnkgraph"),
+    include_prefix: bool = True,
 ) -> List[Mapping[str, Any]]:
     """Find book entries whose normalized title matches or extends ``title``."""
 
@@ -85,11 +86,20 @@ def lookup_title_entries(
     data = index or load_source_book_index()
     matches: List[Mapping[str, Any]] = []
     seen = set()
+    for source, book in lookup_crosswalk_books(title_norm, data, sources=sources):
+        key = (source, str(book.get("id") or book.get("book_id") or book.get("url") or book.get("api_url")))
+        if key not in seen:
+            seen.add(key)
+            matches.append(book)
     for source in sources:
         for book in source_books(data, source):
             book_norm = str(book.get("normalized_title") or normalize_title(str(book.get("title") or "")))
             short_norm = normalize_title(short_title(str(book.get("title") or "")))
-            if _title_norm_matches(title_norm, book_norm) or _title_norm_matches(title_norm, short_norm):
+            if _title_norm_matches(title_norm, book_norm, include_prefix=include_prefix) or _title_norm_matches(
+                title_norm,
+                short_norm,
+                include_prefix=include_prefix,
+            ):
                 key = (source, str(book.get("id") or book.get("book_id") or book.get("url") or book.get("api_url")))
                 if key not in seen:
                     seen.add(key)
@@ -106,11 +116,39 @@ def lookup_title_variants(
     """Return normalized title variants present in the local source index."""
 
     variants = {normalize_title(title)}
-    for entry in lookup_title_entries(title, index=index, sources=sources):
+    for entry in lookup_title_entries(title, index=index, sources=sources, include_prefix=False):
         entry_title = str(entry.get("title") or "")
         variants.add(normalize_title(entry_title))
         variants.add(normalize_title(short_title(entry_title)))
     return {variant for variant in variants if variant}
+
+
+def lookup_crosswalk_books(
+    normalized_title: str,
+    index: Mapping[str, Any],
+    *,
+    sources: Sequence[str] = ("shidian", "cnkgraph"),
+) -> List[tuple[str, Mapping[str, Any]]]:
+    """Return source-tagged books from the explicit crosswalk, if present."""
+
+    crosswalk = index.get("crosswalk") if isinstance(index, Mapping) else None
+    if not isinstance(crosswalk, Mapping):
+        return []
+    entries = crosswalk.get("entries")
+    if not isinstance(entries, list):
+        return []
+    wanted = set(sources)
+    matches: List[tuple[str, Mapping[str, Any]]] = []
+    for entry in entries:
+        if not isinstance(entry, Mapping) or entry.get("normalized_title") != normalized_title:
+            continue
+        for source in ("shidian", "cnkgraph"):
+            if source not in wanted:
+                continue
+            books = entry.get(source)
+            if isinstance(books, list):
+                matches.extend((source, book) for book in books if isinstance(book, Mapping))
+    return matches
 
 
 def short_title(title: str) -> str:
@@ -167,12 +205,12 @@ def iter_title_norms(entries: Iterable[Mapping[str, Any]]) -> Iterable[str]:
         yield normalize_title(short_title(title))
 
 
-def _title_norm_matches(query_norm: str, book_norm: str) -> bool:
+def _title_norm_matches(query_norm: str, book_norm: str, *, include_prefix: bool = True) -> bool:
     if not query_norm or not book_norm:
         return False
     if query_norm == book_norm:
         return True
-    return len(query_norm) >= 2 and book_norm.startswith(query_norm)
+    return include_prefix and len(query_norm) >= 2 and book_norm.startswith(query_norm)
 
 
 def _canonical_shidian_book_url(url: str) -> str:

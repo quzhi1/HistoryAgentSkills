@@ -530,13 +530,13 @@ def test_source_book_index() -> bool:
     """Test source book index parsing and lookup offline."""
     print("\n测试8: 识典/cnkgraph 书目索引...")
     from source_book_index import find_shidian_book_by_url, lookup_title_entries, lookup_title_variants
-    from update_source_book_index import normalize_cnkgraph_book, parse_shidian_sitemap
+    from update_source_book_index import build_crosswalk, normalize_cnkgraph_book, normalize_existing_sources, parse_shidian_sitemap
 
     fixture_html = """
     <html><body>
       <a href="/sitemap-book-1">1</a>
       <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fwww.shidianguji.com%2Fzh%2Fbook%2FNA0001">
-        毛詩 全文原文
+        毛詩 全文原文及譯文
       </a>
       <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fevil.example%2Fbook%2Fbad">
         不应保存
@@ -557,20 +557,28 @@ def test_source_book_index() -> bool:
         ok = False
 
     cnkgraph_book = normalize_cnkgraph_book(
-        {"Id": 2681, "Name": "清史稿", "Author": "赵尔巽等撰", "Dynasty": "近现代"},
-        "史部",
-        "正史类",
+        {"Id": 7337, "Name": "毛诗", "Author": "毛亨传", "Dynasty": "汉"},
+        "经部",
+        "诗类",
     )
-    if cnkgraph_book["api_url"] == "https://open.cnkgraph.com/api/Book/2681" and cnkgraph_book["title"] == "清史稿":
+    if cnkgraph_book["api_url"] == "https://open.cnkgraph.com/api/Book/7337" and cnkgraph_book["title"] == "毛诗":
         print("✓ cnkgraph 分组书目归一化为可验证 API 链接")
     else:
         print(f"✗ cnkgraph 书目归一化失败: {cnkgraph_book}")
         ok = False
 
-    sample_index = {
-        "sources": {
+    sources = normalize_existing_sources(
+        {
             "shidian": {"books": parsed["books"]},
             "cnkgraph": {"books": [cnkgraph_book]},
+        }
+    )
+    crosswalk = build_crosswalk(sources)
+    sample_index = {
+        "crosswalk": crosswalk,
+        "sources": {
+            "shidian": sources["shidian"],
+            "cnkgraph": sources["cnkgraph"],
         }
     }
     found = find_shidian_book_by_url("https://www.shidianguji.com/zh/book/NA0001/chapter/abc", index=sample_index)
@@ -580,10 +588,22 @@ def test_source_book_index() -> bool:
         print(f"✗ 章节 URL 反查书目失败: {found}")
         ok = False
 
-    variants = lookup_title_variants("清史稿", index=sample_index)
-    entries = lookup_title_entries("清史稿", index=sample_index)
-    if "清史稿" in variants and entries and entries[0]["api_url"].endswith("/Book/2681"):
-        print("✓ 书名可在本地索引中查到对应来源链接")
+    crosswalk_entries = crosswalk["entries"]
+    if (
+        crosswalk["entry_count"] == 1
+        and crosswalk_entries[0]["normalized_title"] == "毛诗"
+        and crosswalk_entries[0]["shidian"][0]["url"] == "https://www.shidianguji.com/zh/book/NA0001"
+        and crosswalk_entries[0]["cnkgraph"][0]["api_url"] == "https://open.cnkgraph.com/api/Book/7337"
+    ):
+        print("✓ crosswalk 可显式关联识典书页和 cnkgraph 书目")
+    else:
+        print(f"✗ crosswalk 生成失败: {crosswalk}")
+        ok = False
+
+    variants = lookup_title_variants("毛诗", index=sample_index)
+    entries = lookup_title_entries("毛诗", index=sample_index)
+    if "毛诗" in variants and entries and {entry.get("title") for entry in entries} == {"毛詩", "毛诗"}:
+        print("✓ 书名优先通过 crosswalk 查到两边来源链接")
     else:
         print(f"✗ 本地书名索引查找失败: variants={variants}, entries={entries}")
         ok = False
