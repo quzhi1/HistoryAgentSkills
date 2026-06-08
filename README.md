@@ -27,26 +27,55 @@
 
 ### 一、搭项目环境（必做）
 
+macOS / Linux:
+
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 ./setup_venv.sh
 ```
 
-脚本会建 venv、装依赖（`mdict-utils` + `requests` + `cnmaps-data` + `opencc-python-reimplemented`）、跑一次自检。完成后 `venv/bin/mdict` 和 `venv/bin/python` 即可直接调用，**不需要** `source venv/bin/activate`。
+Windows PowerShell:
+
+```powershell
+cd C:\path\to\HistoryAgentSkills
+.\setup_venv.ps1
+```
+
+跨平台通用方式：
+
+```bash
+python setup_venv.py
+```
+
+脚本会根据自身所在目录识别项目根目录，创建 `venv`、安装依赖（`mdict-utils` + `requests` + `cnmaps-data` + `opencc-python-reimplemented`）、跑一次自检。完成后可直接调用 venv 内命令：macOS/Linux 用 `venv/bin/python` / `venv/bin/mdict`，Windows 用 `venv\Scripts\python.exe` / `venv\Scripts\mdict.exe`；也可以统一用 `python scripts/run_in_venv.py ...`，**不需要** `source venv/bin/activate`。
 
 ### 二、全局注册到 Claude Code（推荐）
+
+macOS / Linux:
 
 ```bash
 ./install-global.sh
 ```
 
-脚本会在 `~/.claude/` 下放三样东西：
+Windows PowerShell:
+
+```powershell
+.\install-global.ps1
+```
+
+跨平台通用方式：
+
+```bash
+python install_global.py
+```
+
+安装脚本会从自身所在目录推导项目根目录，不需要手动改脚本里的路径。它会在 `~/.claude/` 下生成三样东西：
 
 - `skills/chinese-history-expert/SKILL.md` — 全局触发入口（stub，把 Claude 引导回项目）
-- `commands/history.md` → 项目内文件的 symlink
-- `agents/history-fact-checker.md` → 项目内文件的 symlink
+- `commands/history.md` — `/history` 命令（写入当前项目目录）
+- `agents/history-fact-checker.md` — 史料校验 subagent（写入当前项目目录）
 
-装完之后，**在任何目录启动 `claude`** 都能用本 skill。改规则只改项目内的文件，全局自动生效（symlink 单一真理源）。
+装完之后，**在任何目录启动 `claude`** 都能用本 skill。移动项目目录或修改全局入口模板后，重新运行安装脚本即可刷新全局文件；完整规则仍以项目内 `SKILL.md` 为单一真理源。
 
 不想全局注册也行，跳过这一步，本 skill 仍可在项目目录内使用。
 
@@ -93,6 +122,12 @@ Claude Code 识别为中国历史问题后会自动触发本 skill，按 `SKILL.
 不进 Claude Code，直接跑：
 
 ```bash
+# 跨平台 runner（推荐给文档和全局命令使用）
+python scripts/run_in_venv.py scripts/history_query.py "李白"
+python scripts/run_in_venv.py mdict -q "安史之乱" dict/历史辞典4合1.mdx
+
+# macOS/Linux 可直接调用 venv/bin；Windows PowerShell 对应 venv\Scripts\python.exe / mdict.exe
+
 # 综合查询
 venv/bin/python scripts/history_query.py "李白"
 
@@ -159,7 +194,11 @@ HistoryAgentSkills/
 ├── SKILL.md                        # 主 skill：详细工作流程、回答模板、引用规范
 ├── README.md                       # 本文件
 ├── install-global.sh               # 一键全局注册到 ~/.claude/
+├── install-global.ps1              # Windows PowerShell 全局注册入口
+├── install_global.py               # 跨平台全局注册主实现
 ├── setup_venv.sh                   # 一键搭虚拟环境
+├── setup_venv.ps1                  # Windows PowerShell 环境设置入口
+├── setup_venv.py                   # 跨平台环境设置主实现
 ├── requirements.txt                # Python 依赖
 ├── test_system.py                  # 系统自检
 │
@@ -186,6 +225,8 @@ HistoryAgentSkills/
 │   ├── history_map_link.py         # 左图右史同代一级行政区链接
 │   ├── shidian_link.py             # 识典古籍原文章节链接验证
 │   ├── source_book_index.py        # 识典/cnkgraph 书目索引读取与匹配
+│   ├── run_in_venv.py              # 跨平台调用 venv 内命令，无需 activate
+│   ├── venv_utils.py               # venv/bin 与 venv/Scripts 路径工具
 │   ├── update_history_map_index.py # 刷新左图右史路由索引
 │   ├── update_source_book_index.py # 刷新识典/cnkgraph 书目链接索引
 │   └── book_search.py              # EPUB 全文检索器
@@ -206,7 +247,7 @@ HistoryAgentSkills/
 1. **必查两边**：辞典 + cnkgraph，缺一不可。只查辞典作答 = 违规。
 2. **史料引用必须包含书名 + 章节名**：✅《魏书》卷三五《崔浩传》｜❌《魏书》记载｜❌ 据史书记载
 3. **最终回答必须有史料原文短引和译文**：人物、事件、制度类回答不能只给出处或白话概括；原文和现代汉语译文必须分别另起一段
-4. **每部被引用史料都要有简介**：按书名运行 `venv/bin/mdict -q "史料书名" dict/历史辞典4合1.mdx`，用《中国历史大辞典》结果说明作者/时代、体例、内容范围或史料性质；查不到就明说，不能凭常识补写
+4. **每部被引用史料都要有简介**：按书名运行 `python scripts/run_in_venv.py mdict -q "史料书名" dict/历史辞典4合1.mdx`（或对应平台的 venv `mdict`），用《中国历史大辞典》结果说明作者/时代、体例、内容范围或史料性质；查不到就明说，不能凭常识补写
 5. **必须补全六类细节**：时间、地点、相关人物、起因、经过、结果
 6. **年号纪年必须保留并换算**：如天宝十四载 → 天宝十四载（公元755年）；不得只写公元年替代史料年号
 7. **古地名首次出现必须标注今地**：凡最终回答保留顺天府、晋阳、长安、凤翔等古地名，先建清单，查 CHGIS/TGAZ 并用现代边界反查；正文首次出现处必须自然括注，如“深州乐寿（今河北省沧州市献县）”，不输出内部技术依据，不等同古今辖境，也不能只在文末补地点清单
@@ -239,7 +280,7 @@ HistoryAgentSkills/
 ## 注意事项
 
 - ❌ 不要用 Read 工具直接读 `dict/历史辞典4合1.mdx`（约 4GB，会撑爆上下文），只能通过 `mdict -q` 查询
-- ❌ 不要在 Claude Code 触发的命令里用 `source venv/bin/activate`——会被权限系统拦截，每次按回车确认。改用 `venv/bin/python` / `venv/bin/mdict` 直调
+- ❌ 不要在 Claude Code 触发的命令里用 `source venv/bin/activate`——会被权限系统拦截，每次按回车确认。改用 `python scripts/run_in_venv.py ...` 或对应平台的 venv 可执行文件直调
 - ✅ 关键词控制 2–6 字，超过 8 字 cnkgraph 常 404；复杂问题用多次短查询交叉验证
 - ✅ 最终答案要保留关键史料原文短引和年号纪年；不要用过去回答或辞典摘要替代重新整理
 - ✅ 古地名今地映射使用 `scripts/place_resolver.py`；最终回答中保留的每个古地名，首次出现处都要括注今地；如果返回歧义、无坐标或无边界命中，必须用自然语言如实说明，不输出脚本状态码或内部实现细节

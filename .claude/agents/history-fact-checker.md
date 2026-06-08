@@ -10,16 +10,16 @@ tools: Bash, Read, Grep, Glob
 
 ## 工作目录与命令规范
 
-所有命令都在 `/Users/zhi.q/HistoryAgentSkills` 下执行。**统一使用 venv 二进制直接调用**，不要用 `source venv/bin/activate`：
+所有命令都在本项目根目录下执行。**优先使用跨平台 runner 或 venv 二进制直接调用**，不要用 `source venv/bin/activate`：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills && venv/bin/mdict -q "<词>" dict/历史辞典4合1.mdx
-cd /Users/zhi.q/HistoryAgentSkills && venv/bin/python cnkgraph/scripts/query_api.py find --keyword "<词>"
+python scripts/run_in_venv.py mdict -q "<词>" dict/历史辞典4合1.mdx
+python scripts/run_in_venv.py cnkgraph/scripts/query_api.py find --keyword "<词>"
 ```
 
-`source` 会触发 Claude Code 的权限二次确认（每次按回车确认很烦），且容易忘记激活；直接走 venv 二进制更稳。
+macOS/Linux 也可以直接用 `venv/bin/python` / `venv/bin/mdict`；Windows PowerShell 对应 `venv\Scripts\python.exe` / `venv\Scripts\mdict.exe`。`source` 会触发 Claude Code 的权限二次确认（每次按回车确认很烦），且容易忘记激活；直接走 runner 或 venv 二进制更稳。
 
-如果 `venv/bin/mdict` 不存在，跑 `./setup_venv.sh` 先建环境，**不要**重新 `pip install`。
+如果 venv 内 `mdict` 不存在，先跑 `./setup_venv.sh`（macOS/Linux）或 `.\setup_venv.ps1`（Windows）建环境，**不要**重新 `pip install`。
 
 ## 校验流程
 
@@ -39,14 +39,14 @@ cd /Users/zhi.q/HistoryAgentSkills && venv/bin/python cnkgraph/scripts/query_api
 
 **A. 辞典引用**：
 ```bash
-venv/bin/mdict -q "<词条名>" dict/历史辞典4合1.mdx
+python scripts/run_in_venv.py mdict -q "<词条名>" dict/历史辞典4合1.mdx
 ```
 对照原答案引用的辞典内容，看是否一致；如果辞典原文跟答案文字不一致（增删改字），标为"篡改"。
 
 **B. 史书引用**：
 - 用 cnkgraph `find` 接口去查关键词（人名/事件名/特征短语，**2–6 字**）：
   ```bash
-  venv/bin/python cnkgraph/scripts/query_api.py find --keyword "<关键词>"
+  python scripts/run_in_venv.py cnkgraph/scripts/query_api.py find --keyword "<关键词>"
   ```
 - 看返回的 `Result[].Books[].Volumes[].Pages[]` 中 `MatchedText` / `PreviousText` / `LaterText` 是否能印证答案里的引文
 - 如果命中的书与答案声称的"《XX史》卷X《XX传》"不一致，或根本查不到对应内容，标为"出处存疑"
@@ -54,15 +54,15 @@ venv/bin/mdict -q "<词条名>" dict/历史辞典4合1.mdx
 
 **C. 诗词/古籍片段**：
 ```bash
-venv/bin/python cnkgraph/scripts/query_api.py poetry --author "<作者>" --keyword "<关键词>"
-venv/bin/python cnkgraph/scripts/query_api.py book --keyword "<关键词>"
+python scripts/run_in_venv.py cnkgraph/scripts/query_api.py poetry --author "<作者>" --keyword "<关键词>"
+python scripts/run_in_venv.py cnkgraph/scripts/query_api.py book --keyword "<关键词>"
 ```
 对照原文是否一字不差。
 
 **D. 被引史料说明**：
 对每一部唯一史料书名运行：
 ```bash
-venv/bin/mdict -q "<史料书名>" dict/历史辞典4合1.mdx
+python scripts/run_in_venv.py mdict -q "<史料书名>" dict/历史辞典4合1.mdx
 ```
 - 若辞典有可用词条，检查原答案是否简要说明了作者/时代、体例、内容范围或史料性质
 - 若辞典查不到，检查原答案是否明说“未在《中国历史大辞典》中查到该书可用介绍”
@@ -125,7 +125,7 @@ venv/bin/mdict -q "<史料书名>" dict/历史辞典4合1.mdx
 
 - 第 N 段建议补一条 cnkgraph find 查询，关键词 "……"
 - 第 M 段需要把「《魏书》记载」补全为「《魏书》卷X《XX传》记载」
-- 第 K 段引用了《XX书》，需要先运行 `venv/bin/mdict -q "XX书" dict/历史辞典4合1.mdx`，再补“被引史料说明”
+- 第 K 段引用了《XX书》，需要先运行 `python scripts/run_in_venv.py mdict -q "XX书" dict/历史辞典4合1.mdx`，再补“被引史料说明”
 - ……
 ```
 

@@ -11,19 +11,42 @@ import sys
 import subprocess
 import os
 import shutil
+from pathlib import Path
+
+ROOT = Path(__file__).resolve().parents[2]
+SCRIPTS_DIR = ROOT / "scripts"
+if str(SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(SCRIPTS_DIR))
+
+from venv_utils import display_venv_command, venv_executable  # noqa: E402
+
+
+DICT_PATH = ROOT / "dict" / "历史辞典4合1.mdx"
+
+
+def mdict_command():
+    """Return the project mdict command, falling back to PATH for activated shells."""
+    venv_mdict = venv_executable(ROOT, "mdict", must_exist=False)
+    if venv_mdict.exists():
+        return str(venv_mdict)
+    return shutil.which("mdict")
 
 def query_dictionary(keyword):
     """查询历史辞典"""
-    dict_path = "dict/历史辞典4合1.mdx"
-    
-    if not os.path.exists(dict_path):
-        print(f"错误：找不到辞典文件 {dict_path}")
+
+    if not os.path.exists(DICT_PATH):
+        print(f"错误：找不到辞典文件 {DICT_PATH}")
+        return None
+
+    command = mdict_command()
+    if not command:
+        print("错误：未安装 mdict-utils，请运行 setup_venv.py / setup_venv.sh / setup_venv.ps1")
         return None
     
     try:
         # 使用 mdict 命令查询
         result = subprocess.run(
-            ["mdict", "-q", keyword, dict_path],
+            [command, "-q", keyword, str(DICT_PATH)],
             capture_output=True,
             text=True,
             timeout=30
@@ -47,7 +70,7 @@ def query_dictionary(keyword):
         print(f"查询超时（关键词：{keyword}）")
         return None
     except FileNotFoundError:
-        print("错误：未安装 mdict-utils，请运行：pip install mdict-utils")
+        print("错误：未安装 mdict-utils，请运行：setup_venv.py / setup_venv.sh / setup_venv.ps1")
         return None
     except Exception as e:
         print(f"查询出错：{e}")
@@ -74,22 +97,19 @@ def format_result(keyword, result):
 def check_environment():
     """检查环境是否正确配置"""
     # 检查mdict命令是否可用
-    if not shutil.which('mdict'):
+    if not mdict_command():
         print("❌ 错误：未找到 mdict 命令")
         print("\n可能的解决方案：")
-        print("1. 激活虚拟环境：")
-        print("   cd /Users/zhi.q/HistoryAgentSkills")
-        print("   source venv/bin/activate")
-        print("\n2. 或安装 mdict-utils：")
-        print("   pip install mdict-utils")
-        print("\n3. 或运行设置脚本：")
-        print("   ./setup_venv.sh")
+        print("1. 运行设置脚本：")
+        print("   ./setup_venv.sh      # macOS/Linux")
+        print("   .\\setup_venv.ps1     # Windows PowerShell")
+        print("\n2. 或确认 venv 内命令存在：")
+        print(f"   {display_venv_command('mdict')} --version")
         return False
     
     # 检查辞典文件是否存在
-    dict_path = "dict/历史辞典4合1.mdx"
-    if not os.path.exists(dict_path):
-        print(f"❌ 错误：找不到辞典文件 {dict_path}")
+    if not os.path.exists(DICT_PATH):
+        print(f"❌ 错误：找不到辞典文件 {DICT_PATH}")
         print("\n请确保在项目根目录运行此脚本")
         return False
     

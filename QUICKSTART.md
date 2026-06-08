@@ -8,64 +8,51 @@
 
 **强烈推荐使用虚拟环境**，这样可以隔离项目依赖，避免与系统Python或其他项目冲突。
 
-```bash
-# 进入项目目录
-cd /Users/zhi.q/HistoryAgentSkills
-
-# 创建虚拟环境
-python3 -m venv venv
-
-# 激活虚拟环境
-# macOS/Linux:
-source venv/bin/activate
-
-# Windows:
-# venv\Scripts\activate
-
-# 安装依赖
-pip install -r requirements.txt
-```
-
-你会看到命令行前面出现 `(venv)` 标记，表示虚拟环境已激活。
-
-### 快捷方式：直接安装（不推荐）
-
-如果不使用虚拟环境，也可以直接安装：
+macOS / Linux:
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-pip install -r requirements.txt
+cd /path/to/HistoryAgentSkills
+./setup_venv.sh
 ```
 
-这会安装两个必需的包：
+Windows PowerShell:
+
+```powershell
+cd C:\path\to\HistoryAgentSkills
+.\setup_venv.ps1
+```
+
+跨平台通用方式：
+
+```bash
+python setup_venv.py
+```
+
+这会创建 `venv` 并安装必需依赖：
 - `mdict-utils`: 用于查询历史辞典
 - `requests`: 用于调用古籍API
+- `cnmaps-data`: 用于现代行政边界反查
+- `opencc-python-reimplemented`: 用于繁简归一化
 
 ### 验证安装
 
 ```bash
 # 验证mdict-utils
-mdict --version
+python scripts/run_in_venv.py mdict --version
 
 # 验证requests
-python -c "import requests; print(requests.__version__)"
+python scripts/run_in_venv.py python -c "import requests; print(requests.__version__)"
 ```
 
 如果都能正常输出版本号，说明安装成功。
 
 ### 以后使用时
 
-每次使用前，记得激活虚拟环境：
+每次使用前，进入项目目录后直接用 runner：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
-source venv/bin/activate  # macOS/Linux
-```
-
-退出虚拟环境：
-
-```bash
-deactivate
+cd /path/to/HistoryAgentSkills
+python scripts/run_in_venv.py test_system.py
 ```
 
 ## 2. 第一次查询（2分钟）
@@ -73,7 +60,7 @@ deactivate
 ### 测试辞典查询
 
 ```bash
-python dict/scripts/query_dict.py "李白"
+python scripts/run_in_venv.py mdict -q "李白" dict/历史辞典4合1.mdx
 ```
 
 如果成功，你会看到《中国历史大辞典》中关于李白的详细解释。
@@ -81,7 +68,7 @@ python dict/scripts/query_dict.py "李白"
 ### 测试API查询
 
 ```bash
-python cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月
+python scripts/run_in_venv.py cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月
 ```
 
 如果成功，你会看到李白关于月的诗词列表。
@@ -89,7 +76,7 @@ python cnkgraph/scripts/query_api.py poetry --author 李白 --keyword 月
 ### 综合查询
 
 ```bash
-python scripts/history_query.py "李白"
+python scripts/run_in_venv.py scripts/history_query.py "李白"
 ```
 
 这会执行完整的查询流程，同时查询辞典和API。
@@ -306,8 +293,8 @@ python dict/scripts/query_dict.py "李白" > output.txt
 
 ### 查看文档
 
-- 主README: `/Users/zhi.q/HistoryAgentSkills/README.md`
-- 使用示例: `/Users/zhi.q/HistoryAgentSkills/EXAMPLES.md`
+- 主README: `/path/to/HistoryAgentSkills/README.md`
+- 使用示例: `/path/to/HistoryAgentSkills/EXAMPLES.md`
 - 辞典文档: `dict/README.md`
 - API文档: `cnkgraph/README.md`
 

@@ -110,6 +110,8 @@ description: 回答中国历史问题的专家系统。查询权威历史辞典�
 
 当用户提出中国历史问题时，按以下步骤操作：
 
+> 命令路径说明：本文示例默认使用 macOS/Linux 的 `venv/bin/python` / `venv/bin/mdict`。Windows PowerShell 对应使用 `venv\Scripts\python.exe` / `venv\Scripts\mdict.exe`；跨平台写法可统一用 `python scripts/run_in_venv.py <script.py|mdict> ...`，不要用 `source venv/bin/activate`。
+
 ### 步骤1：分析问题
 
 识别问题类型和关键要素：
@@ -135,7 +137,7 @@ description: 回答中国历史问题的专家系统。查询权威历史辞典�
 简单人物、事件、地名、作品归属等事实题，如果辞典和 cnkgraph 能直接核定，可以跳过 EPUB；跳过时不要在答案中写“参考了史料学 EPUB”或类似表述。
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/python scripts/book_search.py "关键词" --limit 5
 ```
 
@@ -147,7 +149,7 @@ venv/bin/python scripts/book_search.py "关键词" --limit 5
 **年号纪年换算**：凡用户问题、辞典结果、cnkgraph 片段或草稿答案中出现年号纪年，都要运行换算程序并在回答中标注公元纪年。
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/python scripts/dynasty_converter.py "天宝十四载"
 venv/bin/python scripts/dynasty_converter.py "唐 天宝三载"
 # 若脚本报"年号X存在歧义"，在年号前加朝代名重试：
@@ -168,7 +170,7 @@ venv/bin/python scripts/dynasty_converter.py "明 永乐十五年"
 #### 环境检查
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 ```
 
@@ -182,14 +184,14 @@ venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 当前环境未安装 mdict-utils，无法查询辞典。
 
 **可能原因**：
-1. 未激活虚拟环境
+1. 未通过项目 venv 或跨平台 runner 调用
 2. 虚拟环境损坏
 3. 依赖未安装
 
 **解决方案**：
-1. 检查 `venv/bin/mdict` 是否存在
-2. 不存在则运行设置脚本：`./setup_venv.sh`
-3. 查询时统一使用 `venv/bin/mdict`，不要用 `source`
+1. 检查项目 venv 内的 `mdict` 是否存在：macOS/Linux 查 `venv/bin/mdict`，Windows 查 `venv\Scripts\mdict.exe`
+2. 不存在则运行设置脚本：macOS/Linux 用 `./setup_venv.sh`，Windows PowerShell 用 `.\setup_venv.ps1`，也可直接运行 `python setup_venv.py`
+3. 查询时统一使用 `python scripts/run_in_venv.py mdict ...` 或对应平台的 venv `mdict`，不要用 `source`
 
 **诚实回答**：
 由于技术问题，当前无法查询辞典。请用户稍后重试。
@@ -199,7 +201,7 @@ venv/bin/mdict -q "关键词" dict/历史辞典4合1.mdx
 
 使用 dict 技能查询：
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/mdict -q "关键词1" dict/历史辞典4合1.mdx
 venv/bin/mdict -q "关键词2" dict/历史辞典4合1.mdx
 ```
@@ -238,7 +240,7 @@ venv/bin/mdict -q "关键词2" dict/历史辞典4合1.mdx
 确定最终答案可能保留的史料书名后，对每一部唯一史料按书名查询《中国历史大辞典》：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/mdict -q "史料书名" dict/历史辞典4合1.mdx
 ```
 
@@ -269,7 +271,7 @@ venv/bin/mdict -q "史料书名" dict/历史辞典4合1.mdx
 
 ```bash
 # 检索包含关键词的古籍原文片段（返回命中句及前后文）
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/python cnkgraph/scripts/query_api.py find --keyword "崔浩"
 venv/bin/python cnkgraph/scripts/query_api.py find --keyword "暴扬国恶"
 venv/bin/python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
@@ -312,7 +314,7 @@ venv/bin/python cnkgraph/scripts/query_api.py find --keyword "刘知远 称帝"
 确定最终回答要保留的短引列表后，**逐条**运行以下命令：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/python scripts/shidian_link.py \
   --source “《魏书》卷三五《崔浩传》” \
   --quote “崔浩字伯渊清河人也” \
@@ -357,7 +359,7 @@ venv/bin/python scripts/shidian_link.py \
 综合回答前，再检查用户问题、查询材料和草稿答案里是否保留古地名。凡出现古地名，结合年号换算得到的公元年份，运行古地名映射程序：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/python scripts/place_resolver.py "顺天府" --year 1800
 venv/bin/python scripts/place_resolver.py "长安" --year 755 --json
 ```
@@ -386,7 +388,7 @@ venv/bin/python scripts/place_resolver.py "长安" --year 755 --json
 一级行政区检索优先按这个顺序做：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 # 先查地名本身，看辞典是否给出历史沿革和所属上级
 venv/bin/mdict -q "汜水县" dict/历史辞典4合1.mdx
 
@@ -419,7 +421,7 @@ venv/bin/python scripts/history_map_link.py \
 确认到同代一级区划后，再运行：
 
 ```bash
-cd /Users/zhi.q/HistoryAgentSkills
+cd /path/to/HistoryAgentSkills
 venv/bin/python scripts/history_map_link.py \
   --place "济南" \
   --year 1582 \
@@ -1010,17 +1012,20 @@ venv/bin/python cnkgraph/scripts/query_api.py people --name 李白
 
 1. **mdict-utils**（查询辞典）
    ```bash
-   ./setup_venv.sh
+   ./setup_venv.sh      # macOS/Linux
+   .\setup_venv.ps1     # Windows PowerShell
    ```
 
 2. **requests**（调用API）
    ```bash
-   ./setup_venv.sh
+   ./setup_venv.sh      # macOS/Linux
+   .\setup_venv.ps1     # Windows PowerShell
    ```
 
 3. **cnmaps-data**（现代行政区边界）
    ```bash
-   ./setup_venv.sh
+   ./setup_venv.sh      # macOS/Linux
+   .\setup_venv.ps1     # Windows PowerShell
    ```
 
 ### 可选工具
