@@ -122,6 +122,9 @@ class SQLiteSourceBookIndex:
             if include_prefix:
                 where = "(normalized_title = ? OR normalized_title LIKE ?)"
                 params = (title_norm, f"{title_norm}%")
+                if len(title_norm) >= 4:
+                    where = f"({where} OR normalized_title LIKE ?)"
+                    params = (*params, f"%{title_norm}%")
             rows = self.conn.execute(
                 f"""
                 SELECT title, normalized_title, url, book_id
@@ -138,6 +141,9 @@ class SQLiteSourceBookIndex:
             if include_prefix:
                 where = "(normalized_title = ? OR normalized_title LIKE ?)"
                 params = (title_norm, f"{title_norm}%")
+                if len(title_norm) >= 4:
+                    where = f"({where} OR normalized_title LIKE ?)"
+                    params = (*params, f"%{title_norm}%")
             rows = self.conn.execute(
                 f"""
                 SELECT id, title, normalized_title, author, dynasty, api_url
@@ -325,8 +331,11 @@ def find_shidian_book_by_url(
     parsed = urlparse(book_url)
     if parsed.path.startswith("/zh/book/"):
         accepted.add(_canonical_shidian_book_url(book_url.replace("/zh/book/", "/book/", 1)))
+    elif parsed.path.startswith("/ens/book/"):
+        accepted.add(_canonical_shidian_book_url(book_url.replace("/ens/book/", "/book/", 1)))
     elif parsed.path.startswith("/book/"):
         accepted.add(_canonical_shidian_book_url(book_url.replace("/book/", "/zh/book/", 1)))
+        accepted.add(_canonical_shidian_book_url(book_url.replace("/book/", "/ens/book/", 1)))
     for book in source_books(data, "shidian"):
         candidate = str(book.get("url") or "")
         if _canonical_shidian_book_url(candidate) in accepted:
@@ -340,7 +349,7 @@ def shidian_book_url_from_any(url: str) -> Optional[str]:
     parsed = urlparse(url)
     if parsed.scheme != "https" or parsed.netloc != "www.shidianguji.com":
         return None
-    match = re.match(r"^(/(?:zh/)?book/[^/?#]+)", parsed.path)
+    match = re.match(r"^(/(?:(?:zh|ens)/)?book/[^/?#]+)", parsed.path)
     if not match:
         return None
     return f"https://www.shidianguji.com{match.group(1)}"
@@ -377,8 +386,13 @@ def _title_norm_matches(query_norm: str, book_norm: str, *, include_prefix: bool
         return False
     if query_norm == book_norm:
         return True
-    return include_prefix and len(query_norm) >= 2 and book_norm.startswith(query_norm)
+    if not include_prefix:
+        return False
+    if len(query_norm) >= 2 and book_norm.startswith(query_norm):
+        return True
+    return len(query_norm) >= 4 and query_norm in book_norm
 
 
 def _canonical_shidian_book_url(url: str) -> str:
-    return (shidian_book_url_from_any(url) or url).replace("/zh/book/", "/book/", 1).rstrip("/")
+    canonical = shidian_book_url_from_any(url) or url
+    return canonical.replace("/zh/book/", "/book/", 1).replace("/ens/book/", "/book/", 1).rstrip("/")

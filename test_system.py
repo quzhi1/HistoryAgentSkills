@@ -10,6 +10,8 @@ import subprocess
 import sys
 from pathlib import Path
 
+import requests
+
 
 ROOT = Path(__file__).resolve().parent
 SCRIPTS_DIR = ROOT / "scripts"
@@ -76,6 +78,7 @@ def test_files() -> bool:
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
         "scripts/place_resolver.py",
+        "scripts/place_admin_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
         "scripts/source_book_index.py",
@@ -84,6 +87,8 @@ def test_files() -> bool:
         "data/history_map_index.json",
         "data/source_book_index.sqlite",
         "SKILL.md",
+        "AGENTS.md",
+        "CLAUDE.md",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
     ]
@@ -112,32 +117,74 @@ def test_files() -> bool:
 
 
 def test_workflow_guardrails() -> bool:
-    """Check documentation keeps mandatory link-validation gates explicit."""
+    """Check documentation keeps mandatory workflow gates explicit."""
     print("\n测试3: 工作流强制门禁文档...")
     requirements = {
         "SKILL.md": [
+            "单一真理源",
             "多人物/列表型答案",
             "不传 `--admin`",
             "needs_admin",
             "静默省略",
             "地点与地图核验",
+            "place_admin_resolver.py",
+            "反查历史地名",
+            "识典原文链接交付",
+            "正文出处行已交付",
+            "正文首次出现或“地点与地图核验”已交付",
+            "清单 C：被引史料说明",
+            'venv/bin/mdict -q "史料书名"',
+            "每部被引用史料",
         ],
         "README.md": [
             "多人物/列表型回答",
             "不传 `--admin`",
             "needs_admin",
             "静默省略",
+            "逐条交付",
+            "二次验证未通过",
+            "不附左图右史链接",
+            "place_admin_resolver.py",
+            "反查历史地名",
+            "必说明被引史料",
+            "每部被引用史料都要有简介",
+            "单一真理源",
         ],
         "CLAUDE.md": [
-            "多人物/列表型答案",
-            "不传 `--admin`",
-            "needs_admin",
+            "单一真理源",
+            "SKILL.md",
+            "venv/bin/mdict -q",
+            "不要 `source",
+            "venv/bin/python test_system.py",
+        ],
+        "AGENTS.md": [
+            "单一真理源",
+            "SKILL.md",
+            "venv/bin/mdict -q",
+            "不要 `source",
+            "venv/bin/python test_system.py",
         ],
         "COMMON_MISTAKES.md": [
             "错误示例7",
+            "错误示例8",
+            "脚本跑了",
+            "逐条交付结果",
             "history_map_link.py",
             "不传 --admin",
             "needs_admin",
+            "错误示例10",
+            "反查历史地名",
+            "只给史料出处",
+        ],
+        ".claude/commands/history.md": [
+            "查询被引用史料说明",
+            "<史料书名>",
+            "被引史料说明",
+        ],
+        ".claude/agents/history-fact-checker.md": [
+            "被引史料说明核查",
+            "<史料书名>",
+            "缺少被引史料说明",
         ],
     }
     ok = True
@@ -148,7 +195,7 @@ def test_workflow_guardrails() -> bool:
             print(f"✗ {filename} 缺少门禁关键词: {', '.join(missing)}")
             ok = False
         else:
-            print(f"✓ {filename} 已写明左图右史强制核验门禁")
+            print(f"✓ {filename} 已写明强制工作流门禁")
     return ok
 
 
@@ -162,6 +209,7 @@ def test_scripts_compile() -> bool:
         "scripts/dynasty_converter.py",
         "scripts/book_search.py",
         "scripts/place_resolver.py",
+        "scripts/place_admin_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
         "scripts/source_book_index.py",
@@ -342,6 +390,56 @@ class FakeTgazPlaceClient:
             "无坐标": [_tgaz_payload("hvd_6", "无坐标", 700, 800)],
             "海外": [_tgaz_payload("hvd_7", "海外", 700, 800, 20, 20)],
             "省内": [_tgaz_payload("hvd_8", "省内", 700, 800, 9, 9)],
+            "登封": [
+                _tgaz_payload(
+                    "hvd_9",
+                    "登封县",
+                    696,
+                    1911,
+                    2,
+                    2,
+                    present_location="今测试县",
+                    source_note="旧唐书：河南府登封县，隋嵩阳县。",
+                )
+            ],
+            "嵩阳县": [
+                _tgaz_payload(
+                    "hvd_10",
+                    "嵩阳县",
+                    605,
+                    642,
+                    2,
+                    2,
+                    parent="豫州 / 河南郡 / 洛州",
+                    present_location="今测试县",
+                    source_note="隋大业元年置，属豫州，三年属河南郡；唐属洛州。治今测试县。",
+                )
+            ],
+            "历城": [
+                _tgaz_payload(
+                    "hvd_11",
+                    "历城县",
+                    900,
+                    1911,
+                    2,
+                    2,
+                    present_location="今测试县",
+                    source_note="明洪武九年改齐州为济南府，治今测试县。",
+                )
+            ],
+            "济南府": [
+                _tgaz_payload(
+                    "hvd_12",
+                    "济南府",
+                    1369,
+                    1911,
+                    2,
+                    2,
+                    parent="山东布政司",
+                    present_location="今测试县",
+                    source_note="明属山东布政司，治今测试县。",
+                )
+            ],
         }
         self.detail_payloads = {
             "hvd_1": _tgaz_payload("hvd_1", "古城", 700, 800, 2, 2),
@@ -361,17 +459,24 @@ def _tgaz_payload(
     end: int,
     lon: float | None = None,
     lat: float | None = None,
+    parent: str = "测试州",
+    present_location: str = "",
+    source_note: str = "",
 ):
+    parent_items = [{"name": item.strip()} for item in parent.split("/") if item.strip()]
     payload = {
         "sys_id": sys_id,
         "spellings": [{"simplified Chinese": name}, {"transcribed in Pinyin": f"{name} Pinyin"}],
         "feature_type": {"name": "县", "English": "county"},
         "temporal": {"begin year": str(begin), "end year": str(end)},
-        "historical_context": {"part of": [{"name": "测试州"}]},
+        "historical_context": {"part of": parent_items},
         "data source": "CHGIS",
+        "source note": source_note,
     }
     if lon is not None and lat is not None:
         payload["spatial"] = {"longitude": str(lon), "latitude": str(lat)}
+        if present_location:
+            payload["spatial"]["present_location"] = [{"text": present_location}]
     return payload
 
 
@@ -492,7 +597,7 @@ def test_place_resolver() -> bool:
 def test_history_map_link() -> bool:
     """Test left-map/right-history route matching with the static index."""
     print("\n测试8: 左图右史同代一级区划链接...")
-    from history_map_link import resolve_history_map_link
+    from history_map_link import resolve_history_map_link, transition_map_pages
 
     ok = True
 
@@ -514,6 +619,43 @@ def test_history_map_link() -> bool:
         print("✓ 清代河南省匹配清朝河南省地图")
     else:
         print(f"✗ 清代河南匹配失败: {qing_henan}")
+        ok = False
+
+    wude_henan = resolve_history_map_link("汜水", 621, "河南诸郡", dynasty="唐")
+    if (
+        wude_henan["status"] == "resolved"
+        and wude_henan["period"] == "隋"
+        and wude_henan["url"] == "https://history-map.osgeo.cn/#/page14/html?ch=ch14_sui&sec=sec05_henan"
+    ):
+        print("✓ 唐武德过渡期可匹配隋朝河南诸郡地图")
+    else:
+        print(f"✗ 唐武德过渡期地图匹配失败: {wude_henan}")
+        ok = False
+
+    zhenguan_henan = resolve_history_map_link("汜水", 627, "河南诸郡", dynasty="唐")
+    if zhenguan_henan["status"] == "not_found":
+        print("✓ 过渡期规则不会套用到贞观以后")
+    else:
+        print(f"✗ 过渡期规则范围过宽: {zhenguan_henan}")
+        ok = False
+
+    transition_tang = transition_map_pages(621, "唐")
+    transition_sui = transition_map_pages(621, "隋")
+    transition_song = transition_map_pages(621, "宋")
+    transition_post_wude = transition_map_pages(627, "唐")
+    if (
+        transition_tang == ["page14"]
+        and transition_sui == ["page14"]
+        and transition_song == []
+        and transition_post_wude == []
+    ):
+        print("✓ 过渡期地图页由相邻时代边界通用推导")
+    else:
+        print(
+            "✗ 过渡期地图页推导失败: "
+            f"唐621={transition_tang}, 隋621={transition_sui}, "
+            f"宋621={transition_song}, 唐627={transition_post_wude}"
+        )
         ok = False
 
     with (ROOT / "data" / "history_map_index.json").open("r", encoding="utf-8") as f:
@@ -567,9 +709,140 @@ def test_history_map_link() -> bool:
     return ok
 
 
+def test_place_admin_resolver() -> bool:
+    """Test reverse modern-location to historical admin resolution offline."""
+    print("\n测试9: 现代地点线索反查历史地名与地图区划...")
+    from place_admin_resolver import resolve_place_admin
+    from place_resolver import BoundaryRecord, ModernBoundaryResolver
+
+    boundary_resolver = ModernBoundaryResolver(
+        [
+            BoundaryRecord(
+                name="测试省",
+                level="省",
+                province="测试省",
+                adcode="100000",
+                source="fixture",
+                geometry=_square(0, 0, 10, 10),
+            ),
+            BoundaryRecord(
+                name="测试市",
+                level="市",
+                province="测试省",
+                city="测试市",
+                adcode="100100",
+                source="fixture",
+                geometry=_square(0, 0, 8, 8),
+            ),
+            BoundaryRecord(
+                name="测试县",
+                level="区县",
+                province="测试省",
+                city="测试市",
+                district="测试县",
+                adcode="100101",
+                source="fixture",
+                geometry=_square(1, 1, 5, 5),
+            ),
+        ]
+    )
+    client = FakeTgazPlaceClient()
+    ok = True
+
+    resolved = resolve_place_admin(
+        "少林寺",
+        625,
+        dynasty="唐",
+        modern_hint="测试县",
+        lookup_names=["登封"],
+        tgaz_client=client,
+        boundary_resolver=boundary_resolver,
+    )
+    derived_names = {item["name"] for item in resolved.get("derived_candidates", [])}
+    if (
+        resolved["status"] == "resolved"
+        and resolved["historical_place"]["name"] == "嵩阳县"
+        and "嵩阳县" in derived_names
+        and resolved["map_link"]["admin"] == "河南诸郡"
+        and resolved["map_link"]["period"] == "隋"
+    ):
+        print("✓ 可从现代/后世地名沿革反查目标年份历史地名，并验证过渡期前朝地图")
+    else:
+        print(f"✗ 现代地点反查历史区划失败: {resolved}")
+        ok = False
+
+    explicit = resolve_place_admin(
+        "少林寺",
+        625,
+        dynasty="唐",
+        modern_hint="测试省测试市测试县",
+        candidates=["嵩阳县"],
+        tgaz_client=client,
+        boundary_resolver=boundary_resolver,
+    )
+    if explicit["status"] == "resolved" and explicit["map_link"]["admin"] == "河南诸郡":
+        print("✓ 手工给出的来源候选历史地名也可闭环验证")
+    else:
+        print(f"✗ 来源候选验证失败: {explicit}")
+        ok = False
+
+    ming = resolve_place_admin(
+        "济南府",
+        1582,
+        dynasty="明",
+        modern_hint="测试县",
+        lookup_names=["历城"],
+        tgaz_client=client,
+        boundary_resolver=boundary_resolver,
+    )
+    ming_derived = {item["name"] for item in ming.get("derived_candidates", [])}
+    if (
+        ming["status"] == "resolved"
+        and ming["historical_place"]["name"] == "济南府"
+        and "济南府" in ming_derived
+        and ming["map_link"]["admin"] == "山东布政司"
+        and ming["map_link"]["period"] == "明"
+    ):
+        print("✓ 非隋唐沿革也可反查历史地名，并按同代一级区划验证地图")
+    else:
+        print(f"✗ 非隋唐反查失败: {ming}")
+        ok = False
+
+    missing_candidates = resolve_place_admin(
+        "少林寺",
+        625,
+        dynasty="唐",
+        modern_hint="测试县",
+        tgaz_client=client,
+        boundary_resolver=boundary_resolver,
+    )
+    if missing_candidates["status"] == "needs_candidates":
+        print("✓ 缺少来源候选时不会从现代地名凭空猜历史地名")
+    else:
+        print(f"✗ 缺少候选未 fail-closed: {missing_candidates}")
+        ok = False
+
+    mismatch = resolve_place_admin(
+        "少林寺",
+        625,
+        dynasty="唐",
+        modern_hint="不存在地",
+        candidates=["嵩阳县"],
+        tgaz_client=client,
+        boundary_resolver=boundary_resolver,
+    )
+    if mismatch["status"] == "not_found":
+        print("✓ 现代地点线索不匹配时拒绝继续推导地图")
+    else:
+        print(f"✗ 现代地点不匹配仍继续推导: {mismatch}")
+        ok = False
+
+    return ok
+
+
 def test_source_book_index() -> bool:
     """Test source book index parsing and lookup offline."""
-    print("\n测试9: 识典/cnkgraph 书目索引...")
+    print("\n测试10: 识典/cnkgraph 书目索引...")
     from tempfile import TemporaryDirectory
 
     from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_entries, lookup_title_variants
@@ -581,6 +854,9 @@ def test_source_book_index() -> bool:
       <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fwww.shidianguji.com%2Fzh%2Fbook%2FNA0001">
         毛詩 全文原文及譯文
       </a>
+      <a href="/ens/book/QDTW0001">
+        全唐文（欽定全唐文）全文原文
+      </a>
       <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fevil.example%2Fbook%2Fbad">
         不应保存
       </a>
@@ -588,12 +864,18 @@ def test_source_book_index() -> bool:
     """
     ok = True
     parsed = parse_shidian_sitemap(fixture_html, sitemap_path="/sitemap-book")
-    if parsed["sitemap_paths"] == ["/sitemap-book-1"] and len(parsed["books"]) == 1:
-        book = parsed["books"][0]
-        if book["title"] == "毛詩" and book["url"] == "https://www.shidianguji.com/zh/book/NA0001":
+    if parsed["sitemap_paths"] == ["/sitemap-book-1"] and len(parsed["books"]) == 2:
+        book = next((item for item in parsed["books"] if item["title"] == "毛詩"), None)
+        qdtw_book = next((item for item in parsed["books"] if item["title"] == "全唐文（欽定全唐文）"), None)
+        if (
+            book
+            and qdtw_book
+            and book["url"] == "https://www.shidianguji.com/book/NA0001"
+            and qdtw_book["url"] == "https://www.shidianguji.com/book/QDTW0001"
+        ):
             print("✓ 识典 sitemap 安全跳转可还原为官方书页")
         else:
-            print(f"✗ 识典书页解析字段错误: {book}")
+            print(f"✗ 识典书页解析字段错误: books={parsed['books']}")
             ok = False
     else:
         print(f"✗ 识典 sitemap 解析失败: {parsed}")
@@ -625,17 +907,18 @@ def test_source_book_index() -> bool:
         }
     }
     found = find_shidian_book_by_url("https://www.shidianguji.com/zh/book/NA0001/chapter/abc", index=sample_index)
-    if found and found["title"] == "毛詩":
+    ens_found = find_shidian_book_by_url("https://www.shidianguji.com/ens/book/NA0001/chapter/abc", index=sample_index)
+    if found and ens_found and found["title"] == "毛詩" and ens_found["title"] == "毛詩":
         print("✓ 可从识典章节 URL 反查本地书目索引")
     else:
-        print(f"✗ 章节 URL 反查书目失败: {found}")
+        print(f"✗ 章节 URL 反查书目失败: found={found}, ens_found={ens_found}")
         ok = False
 
     crosswalk_entries = crosswalk["entries"]
     if (
         crosswalk["entry_count"] == 1
         and crosswalk_entries[0]["normalized_title"] == "毛诗"
-        and crosswalk_entries[0]["shidian"][0]["url"] == "https://www.shidianguji.com/zh/book/NA0001"
+        and crosswalk_entries[0]["shidian"][0]["url"] == "https://www.shidianguji.com/book/NA0001"
         and crosswalk_entries[0]["cnkgraph"][0]["api_url"] == "https://open.cnkgraph.com/api/Book/7337"
     ):
         print("✓ crosswalk 可显式关联识典书页和 cnkgraph 书目")
@@ -651,6 +934,13 @@ def test_source_book_index() -> bool:
         print(f"✗ 本地书名索引查找失败: variants={variants}, entries={entries}")
         ok = False
 
+    qdtw_entries = lookup_title_entries("钦定全唐文", index=sample_index, sources=("shidian",))
+    if qdtw_entries and qdtw_entries[0]["title"] == "全唐文（欽定全唐文）":
+        print("✓ 较长别名可匹配识典括注题名")
+    else:
+        print(f"✗ 识典括注题名匹配失败: {qdtw_entries}")
+        ok = False
+
     with TemporaryDirectory() as tmpdir:
         sqlite_path = Path(tmpdir) / "source_book_index.sqlite"
         write_index(
@@ -660,14 +950,30 @@ def test_source_book_index() -> bool:
         )
         sqlite_index = load_source_book_index(sqlite_path)
         sqlite_entries = lookup_title_entries("毛诗", index=sqlite_index)
+        sqlite_qdtw_entries = lookup_title_entries("钦定全唐文", index=sqlite_index, sources=("shidian",))
         sqlite_found = find_shidian_book_by_url(
             "https://www.shidianguji.com/zh/book/NA0001/chapter/abc",
             index=sqlite_index,
         )
-        if sqlite_found and sqlite_found["url"] == "https://www.shidianguji.com/book/NA0001" and sqlite_entries:
+        sqlite_ens_found = find_shidian_book_by_url(
+            "https://www.shidianguji.com/ens/book/NA0001/chapter/abc",
+            index=sqlite_index,
+        )
+        if (
+            sqlite_found
+            and sqlite_ens_found
+            and sqlite_found["url"] == "https://www.shidianguji.com/book/NA0001"
+            and sqlite_ens_found["url"] == "https://www.shidianguji.com/book/NA0001"
+            and sqlite_entries
+            and sqlite_qdtw_entries
+            and sqlite_qdtw_entries[0]["url"] == "https://www.shidianguji.com/book/QDTW0001"
+        ):
             print("✓ SQLite 书目索引可点查书名与识典章节 URL")
         else:
-            print(f"✗ SQLite 书目索引查询失败: found={sqlite_found}, entries={sqlite_entries}")
+            print(
+                f"✗ SQLite 书目索引查询失败: found={sqlite_found}, "
+                f"ens_found={sqlite_ens_found}, entries={sqlite_entries}, qdtw_entries={sqlite_qdtw_entries}"
+            )
             ok = False
 
     return ok
@@ -675,8 +981,8 @@ def test_source_book_index() -> bool:
 
 def test_shidian_link() -> bool:
     """Test Shidian Guji result parsing and verification offline."""
-    print("\n测试10: 识典古籍原文链接验证...")
-    from shidian_link import ShidianLinkError, find_shidian_link
+    print("\n测试11: 识典古籍原文链接验证...")
+    from shidian_link import ShidianLinkError, find_shidian_link, source_lookup_titles
 
     fixture_html = """
     <html><body>
@@ -689,6 +995,13 @@ def test_shidian_link() -> bool:
     </body></html>
     """
     ok = True
+
+    qdtw_titles = source_lookup_titles("钦定全唐文")
+    if "全唐文" in qdtw_titles:
+        print("✓ 识典链接脚本知道《钦定全唐文》与《全唐文》可互查")
+    else:
+        print(f"✗ 全唐文异名未进入链接脚本查找集合: {qdtw_titles}")
+        ok = False
 
     resolved = find_shidian_link(
         "崔浩字伯渊清河人也",
@@ -752,6 +1065,32 @@ def test_shidian_link() -> bool:
         print(f"✗ 正史原书章节链接匹配失败: {shiji}")
         ok = False
 
+    class FakeResponse:
+        def __init__(self, text: str, status_code: int = 200) -> None:
+            self.text = text
+            self.status_code = status_code
+
+        def raise_for_status(self) -> None:
+            if self.status_code >= 400:
+                raise requests.exceptions.HTTPError(str(self.status_code))
+
+    def fake_direct_get(url: str, **_: object) -> FakeResponse:
+        if url.endswith("/book/LS0016/chapter/LS0016_1"):
+            return FakeResponse("五月己未秦王大破窦建德之众于武牢擒建德河北悉平")
+        return FakeResponse("", 404)
+
+    direct_jiutangshu = find_shidian_link(
+        "秦王大破窦建德之众于武牢擒建德河北悉平",
+        "《旧唐书》卷一《高祖本纪》",
+        keyword="大破窦建德",
+        http_get=fake_direct_get,
+    )
+    if direct_jiutangshu["status"] == "resolved" and direct_jiutangshu["url"].endswith("/LS0016_1"):
+        print("✓ 可用本地书目索引直接校验识典原书章节")
+    else:
+        print(f"✗ 识典原书章节直接校验失败: {direct_jiutangshu}")
+        ok = False
+
     try:
         find_shidian_link("短引", "《魏书》卷三五《崔浩传》", keyword="x" * 65, html=fixture_html)
     except ShidianLinkError:
@@ -778,6 +1117,7 @@ def main() -> int:
         ("EPUB检索", test_epub_search),
         ("古地名映射", test_place_resolver),
         ("左图右史链接", test_history_map_link),
+        ("现代地点反查历史区划", test_place_admin_resolver),
         ("书目索引", test_source_book_index),
         ("识典链接", test_shidian_link),
     ]

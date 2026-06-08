@@ -24,7 +24,7 @@ from source_book_index import DEFAULT_INDEX_PATH, clean_title, normalize_title, 
 SHIDIAN_BASE_URL = "https://www.shidianguji.com"
 SHIDIAN_SITEMAP_PATH = "/sitemap-book"
 SHIDIAN_SITEMAP_RE = re.compile(r"^/sitemap-book(?:-\d+(?:-\d+)*)?$")
-SHIDIAN_BOOK_RE = re.compile(r"^/(?:zh/)?book/[^/?#]+$")
+SHIDIAN_BOOK_RE = re.compile(r"^/(?:(?:zh|ens)/)?book/[^/?#]+$")
 CNKGRAPH_API_BASE = "https://open.cnkgraph.com/api"
 CNKGRAPH_SITE_BASE = "https://cnkgraph.com"
 REQUEST_HEADERS = {
@@ -185,7 +185,8 @@ def shidian_book_target_url(href: str) -> Optional[str]:
         return None
     if not SHIDIAN_BOOK_RE.match(book.path):
         return None
-    return f"https://www.shidianguji.com{book.path}"
+    canonical_path = book.path.replace("/zh/book/", "/book/", 1).replace("/ens/book/", "/book/", 1)
+    return f"https://www.shidianguji.com{canonical_path}"
 
 
 def fetch_cnkgraph_books(

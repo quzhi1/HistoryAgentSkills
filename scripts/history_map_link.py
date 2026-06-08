@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Resolve same-period first-level history-map links for historical places."""
+"""Resolve verified history-map links for historical places."""
 
 from __future__ import annotations
 
@@ -24,6 +24,7 @@ STATUS_NOT_FOUND = "not_found"
 STATUS_PERIOD_MISMATCH = "period_mismatch"
 STATUS_OUT_OF_RANGE = "out_of_range"
 STATUS_INVALID = "invalid"
+TRANSITION_WINDOW_YEARS = 8
 
 
 class HistoryMapLinkError(ValueError):
@@ -118,7 +119,6 @@ ADMIN_SUFFIXES = (
     "府",
 )
 
-
 def resolve_history_map_link(
     place: str,
     year: int,
@@ -126,7 +126,7 @@ def resolve_history_map_link(
     dynasty: Optional[str] = None,
     index_path: Path = DEFAULT_INDEX_PATH,
 ) -> Dict[str, Any]:
-    """Return a verified left-map/right-history route for one historical admin."""
+    """Return a verified route for a same-period or transition-period map."""
 
     checked_place = validate_text(place, "地名", MAX_PLACE_LENGTH)
     checked_year = validate_year(year)
@@ -152,7 +152,7 @@ def resolve_history_map_link(
         return result
     if not admin or not admin.strip():
         result["status"] = STATUS_NEEDS_ADMIN
-        result["reason"] = "必须先根据辞典/原文确认同时代一级行政区，不能用现代省份反推"
+        result["reason"] = "必须先根据辞典/原文确认同时代一级行政区或过渡期前朝区划，不能用现代省份反推"
         return result
 
     checked_admin = validate_text(admin, "一级行政区", MAX_ADMIN_LENGTH)
@@ -163,46 +163,68 @@ def resolve_history_map_link(
     entries = list(index.get("entries") or [])
     year_pages = set(pages_for_year(checked_year))
     dynasty_pages = set(pages_for_dynasty(checked_dynasty)) if checked_dynasty else set()
-    allowed_pages = year_pages
+    page_sets: List[Tuple[set[str], Optional[str]]] = []
+    transition_pages = set(transition_map_pages(checked_year, checked_dynasty))
+    transition_reason = "公元年份接近左图右史时代页边界；已按相邻时代过渡期规则匹配左图右史页面"
     if dynasty_pages:
         overlap = year_pages & dynasty_pages
         if not overlap:
-            result["status"] = STATUS_PERIOD_MISMATCH
-            result["reason"] = "公元年份与朝代提示无法落在同一左图右史时代页"
-            return result
-        allowed_pages = overlap
+            if not transition_pages:
+                result["status"] = STATUS_PERIOD_MISMATCH
+                result["reason"] = "公元年份与朝代提示无法落在同一左图右史时代页"
+                return result
+            page_sets.append((transition_pages, transition_reason))
+        else:
+            page_sets.append((overlap, None))
+            if transition_pages and transition_pages != overlap:
+                page_sets.append((transition_pages, transition_reason))
+    else:
+        page_sets.append((year_pages, None))
+        if transition_pages:
+            page_sets.append((transition_pages, transition_reason))
 
-    if not allowed_pages:
+    if not any(pages for pages, _ in page_sets):
         result["status"] = STATUS_NOT_FOUND
         result["reason"] = "没有与该年份对应的左图右史时代页"
         return result
 
     aliases = admin_aliases(checked_admin)
-    scored: List[Tuple[int, Mapping[str, Any]]] = []
-    for entry in entries:
-        if entry.get("page") not in allowed_pages:
+    best_match: Optional[Tuple[int, Mapping[str, Any], Optional[str]]] = None
+    low_score_seen = False
+    for allowed_pages, transition_reason in page_sets:
+        scored: List[Tuple[int, Mapping[str, Any]]] = []
+        for entry in entries:
+            if entry.get("page") not in allowed_pages:
+                continue
+            score = score_entry(entry, aliases)
+            if score > 0:
+                scored.append((score, entry))
+
+        if not scored:
             continue
-        score = score_entry(entry, aliases)
-        if score > 0:
-            scored.append((score, entry))
 
-    if not scored:
+        scored.sort(key=lambda item: (item[0], -len(str(item[1].get("label") or ""))), reverse=True)
+        best_score, best = scored[0]
+        if best_score >= 70:
+            best_match = (best_score, best, transition_reason)
+            break
+        low_score_seen = True
+
+    if not best_match:
         result["status"] = STATUS_NOT_FOUND
-        result["reason"] = "未找到同一时代且一级行政区标签相符的地图"
+        result["reason"] = (
+            "候选地图与一级行政区匹配度不足，已按 fail-closed 处理"
+            if low_score_seen
+            else "未找到同一时代且一级行政区标签相符的地图"
+        )
         return result
 
-    scored.sort(key=lambda item: (item[0], -len(str(item[1].get("label") or ""))), reverse=True)
-    best_score, best = scored[0]
-    if best_score < 70:
-        result["status"] = STATUS_NOT_FOUND
-        result["reason"] = "候选地图与一级行政区匹配度不足，已按 fail-closed 处理"
-        return result
-
+    _, best, transition_reason = best_match
     result["status"] = STATUS_RESOLVED
     result["url"] = str(best.get("url") or "")
     result["map_label"] = str(best.get("label") or "")
     result["period"] = str(best.get("period") or "")
-    result["reason"] = "已匹配同一时代且一级行政区标签相符的左图右史页面"
+    result["reason"] = transition_reason or "已匹配同一时代且一级行政区标签相符的左图右史页面"
     return result
 
 
@@ -263,6 +285,27 @@ def pages_for_dynasty(dynasty: Optional[str]) -> List[str]:
         if normalize_text(key) in normalized or normalized in normalize_text(key):
             pages.extend(value)
     return list(dict.fromkeys(pages))
+
+
+def transition_map_pages(year: int, dynasty: Optional[str]) -> List[str]:
+    """Return adjacent era pages when the year is close to a map-page boundary."""
+
+    year_pages = set(pages_for_year(year))
+    adjacent_pages: List[str] = []
+    for page, (begin, end) in PAGE_RANGES.items():
+        if page in year_pages:
+            continue
+        distance = min(abs(year - begin), abs(year - end))
+        if distance <= TRANSITION_WINDOW_YEARS:
+            adjacent_pages.append(page)
+
+    if not adjacent_pages:
+        return []
+
+    dynasty_pages = set(pages_for_dynasty(dynasty)) if dynasty else set()
+    if dynasty_pages and not (dynasty_pages & (year_pages | set(adjacent_pages))):
+        return []
+    return adjacent_pages
 
 
 def admin_aliases(admin: str) -> List[str]:
@@ -332,10 +375,10 @@ def format_text(result: Mapping[str, Any]) -> str:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="生成同代同一级行政区的左图右史链接")
+    parser = argparse.ArgumentParser(description="生成同代一级区划或过渡期前朝区划的左图右史链接")
     parser.add_argument("--place", required=True, help="古地名，如 长安")
     parser.add_argument("--year", required=True, type=int, help="公元年份，如 755")
-    parser.add_argument("--admin", help="从辞典/原文确认的同时代一级行政区，如 京畿道")
+    parser.add_argument("--admin", help="从辞典/原文确认的同时代一级行政区或前朝图标签，如 京畿道、河南诸郡")
     parser.add_argument("--dynasty", help="可选朝代提示，如 唐")
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX_PATH, help="左图右史索引 JSON")
     parser.add_argument("--json", action="store_true", help="输出 JSON")

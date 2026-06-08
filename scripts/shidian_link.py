@@ -15,7 +15,7 @@ from urllib.parse import quote, urljoin
 import requests
 from opencc import OpenCC
 
-from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_variants
+from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_entries, lookup_title_variants
 
 BASE_URL = "https://www.shidianguji.com"
 SEARCH_BASE = f"{BASE_URL}/zh/search"
@@ -31,8 +31,25 @@ MAX_QUOTE_LENGTH = 500
 STATUS_RESOLVED = "resolved"
 STATUS_NOT_FOUND = "not_found"
 STATUS_INVALID = "invalid"
-CHAPTER_HREF_PATTERN = re.compile(r"^/(?:zh/)?book/[^/\s]+/chapter/[^?\s#]+")
+CHAPTER_HREF_PATTERN = re.compile(r"^/(?:(?:zh|ens)/)?book/[^/\s]+/chapter/[^?\s#]+")
 SCRIPT_NORMALIZER = OpenCC("t2s")
+DIRECT_CHAPTER_BOOK_ID_RE = re.compile(r"^(?:LS|SK|SBCK|NA)\d+$")
+CHINESE_DIGITS = {
+    "零": 0,
+    "〇": 0,
+    "一": 1,
+    "二": 2,
+    "三": 3,
+    "四": 4,
+    "五": 5,
+    "六": 6,
+    "七": 7,
+    "八": 8,
+    "九": 9,
+    "两": 2,
+    "兩": 2,
+}
+CHINESE_UNITS = {"十": 10, "百": 100, "千": 1000}
 SOURCE_TITLE_ALIASES = {
     "诗经": ("毛诗", "诗三百", "毛诗郑笺", "诗经集传"),
     "毛诗": ("诗经", "诗三百", "毛诗郑笺", "诗经集传"),
@@ -41,6 +58,8 @@ SOURCE_TITLE_ALIASES = {
     "南华真经": ("庄子", "南华经", "南华真经注疏", "庄子注", "庄子集释"),
     "史记": ("太史公书", "史记集解", "史记索隐", "史记正义", "史记三家注"),
     "汉书": ("前汉书", "汉书补注"),
+    "全唐文": ("钦定全唐文",),
+    "钦定全唐文": ("全唐文",),
 }
 
 
@@ -103,6 +122,10 @@ def find_shidian_link(
     search_url = build_search_url(keyword_checked)
 
     if html is None:
+        direct = find_direct_source_chapter_link(quote_checked, source_checked, http_get=http_get)
+        if direct:
+            direct["search_url"] = search_url
+            return direct
         html = fetch_search_html(search_url, http_get=http_get)
     candidates = parse_search_results(html)
     scored = score_candidates(candidates, quote_checked, source_checked)
@@ -129,6 +152,122 @@ def find_shidian_link(
         "matched_source": scored[0]["text"] if scored else None,
         "reason": "未能验证识典章节链接与该原文短引/出处相符",
     }
+
+
+def find_direct_source_chapter_link(
+    quote_text: str,
+    source: str,
+    *,
+    http_get: Optional[HttpGetter] = None,
+) -> Optional[Dict[str, Any]]:
+    """Verify predictable Shidian chapter URLs for known source books.
+
+    Shidian's global search only returns a small top-N candidate set. For
+    canonical series with numeric chapter IDs, such as LS0016_1 for
+    《旧唐书》卷一, the cited original chapter may be present on Shidian but
+    absent from global search results. This fallback uses the local book index
+    plus the cited volume number to check the original book directly.
+    """
+
+    source_terms = extract_source_terms(source)
+    if not source_terms:
+        return None
+    volume_number = extract_volume_number(source)
+    if volume_number is None:
+        return None
+
+    index = load_source_book_index()
+    source_title = source_terms[0]
+    candidate_books: List[Mapping[str, Any]] = []
+    seen_books: set[str] = set()
+    for lookup_title in source_lookup_titles(source_title):
+        for book in lookup_title_entries(lookup_title, index=index, sources=("shidian",), include_prefix=True):
+            key = str(book.get("url") or book.get("book_id") or book.get("title") or "")
+            if key and key not in seen_books:
+                seen_books.add(key)
+                candidate_books.append(book)
+    getter = http_get or requests.get
+    seen_urls: set[str] = set()
+    for book in candidate_books:
+        book_id = str(book.get("book_id") or "").strip()
+        title = str(book.get("title") or source_title)
+        if not DIRECT_CHAPTER_BOOK_ID_RE.match(book_id):
+            continue
+        for url in direct_chapter_urls(book_id, volume_number):
+            if url in seen_urls:
+                continue
+            seen_urls.add(url)
+            html = fetch_optional_html(url, getter)
+            if html is None:
+                continue
+            quote_score = text_overlap_score(quote_text, visible_text(html))
+            if quote_score >= 85:
+                return {
+                    "status": STATUS_RESOLVED,
+                    "url": url,
+                    "matched_source": f"直接校验识典《{title}》卷{volume_number}章节页，quote_score={quote_score}",
+                    "reason": "本地书目索引定位原书后，直接章节页与引文匹配",
+                }
+    return None
+
+
+def direct_chapter_urls(book_id: str, volume_number: int) -> List[str]:
+    chapter_id = f"{book_id}_{volume_number}"
+    return [
+        f"{BASE_URL}/book/{book_id}/chapter/{chapter_id}",
+        f"{BASE_URL}/zh/book/{book_id}/chapter/{chapter_id}",
+    ]
+
+
+def fetch_optional_html(url: str, getter: HttpGetter) -> Optional[str]:
+    try:
+        response = getter(url, timeout=TIMEOUT, headers=REQUEST_HEADERS)
+        if getattr(response, "status_code", 200) == 404:
+            return None
+        response.raise_for_status()
+    except requests.exceptions.RequestException:
+        return None
+    return str(response.text)
+
+
+def visible_text(html: str) -> str:
+    return collapse_space(re.sub(r"<[^>]+>", " ", html))
+
+
+def extract_volume_number(source: str) -> Optional[int]:
+    match = re.search(r"卷\s*([0-9]+|[零〇一二三四五六七八九十百千两兩]+)", source)
+    if not match:
+        return None
+    token = match.group(1)
+    if token.isdigit():
+        return int(token)
+    return parse_chinese_number(token)
+
+
+def parse_chinese_number(token: str) -> Optional[int]:
+    if not token:
+        return None
+    if all(char in CHINESE_DIGITS for char in token) and len(token) > 1:
+        return int("".join(str(CHINESE_DIGITS[char]) for char in token))
+    if all(char in CHINESE_DIGITS for char in token):
+        return CHINESE_DIGITS[token]
+
+    total = 0
+    current = 0
+    used_unit = False
+    for char in token:
+        if char in CHINESE_DIGITS:
+            current = CHINESE_DIGITS[char]
+        elif char in CHINESE_UNITS:
+            unit = CHINESE_UNITS[char]
+            total += (current or 1) * unit
+            current = 0
+            used_unit = True
+        else:
+            return None
+    if used_unit:
+        return total + current
+    return None
 
 
 def validate_text(value: str, label: str, max_length: int) -> str:
@@ -304,6 +443,20 @@ def source_title_variants(title: str) -> set[str]:
         if normalized_title in normalized_group:
             variants.update(normalized_group)
     return {variant for variant in variants if variant}
+
+
+def source_lookup_titles(title: str) -> List[str]:
+    """Return source title strings worth trying against the local book index."""
+
+    titles = [title]
+    normalized_title = normalize_for_match(title)
+    for canonical, aliases in SOURCE_TITLE_ALIASES.items():
+        normalized_group = {normalize_for_match(canonical)}
+        normalized_group.update(normalize_for_match(alias) for alias in aliases)
+        if normalized_title in normalized_group:
+            titles.append(canonical)
+            titles.extend(aliases)
+    return list(dict.fromkeys(item for item in titles if item))
 
 
 def extract_source_terms(source: str) -> List[str]:
