@@ -111,9 +111,50 @@ def test_files() -> bool:
     return all_exist
 
 
+def test_workflow_guardrails() -> bool:
+    """Check documentation keeps mandatory link-validation gates explicit."""
+    print("\n测试3: 工作流强制门禁文档...")
+    requirements = {
+        "SKILL.md": [
+            "多人物/列表型答案",
+            "不传 `--admin`",
+            "needs_admin",
+            "静默省略",
+            "地点与地图核验",
+        ],
+        "README.md": [
+            "多人物/列表型回答",
+            "不传 `--admin`",
+            "needs_admin",
+            "静默省略",
+        ],
+        "CLAUDE.md": [
+            "多人物/列表型答案",
+            "不传 `--admin`",
+            "needs_admin",
+        ],
+        "COMMON_MISTAKES.md": [
+            "错误示例7",
+            "history_map_link.py",
+            "不传 --admin",
+            "needs_admin",
+        ],
+    }
+    ok = True
+    for filename, needles in requirements.items():
+        text = (ROOT / filename).read_text(encoding="utf-8")
+        missing = [needle for needle in needles if needle not in text]
+        if missing:
+            print(f"✗ {filename} 缺少门禁关键词: {', '.join(missing)}")
+            ok = False
+        else:
+            print(f"✓ {filename} 已写明左图右史强制核验门禁")
+    return ok
+
+
 def test_scripts_compile() -> bool:
     """Check Python scripts compile."""
-    print("\n测试3: 检查脚本语法...")
+    print("\n测试4: 检查脚本语法...")
     scripts = [
         "dict/scripts/query_dict.py",
         "cnkgraph/scripts/query_api.py",
@@ -226,7 +267,7 @@ def _multi_calendar_payload(year: int, date_era_name: str | None, rows, era_name
 
 def test_dynasty_converter() -> bool:
     """Test reign-year conversion with fixtures."""
-    print("\n测试4: 年号换算...")
+    print("\n测试5: 年号换算...")
     from dynasty_converter import convert_era_expression
 
     ok = True
@@ -264,7 +305,7 @@ def test_dynasty_converter() -> bool:
 
 def test_epub_search() -> bool:
     """Test local EPUB indexing and searching."""
-    print("\n测试5: EPUB 全文检索...")
+    print("\n测试6: EPUB 全文检索...")
     from book_search import search_books
 
     try:
@@ -351,7 +392,7 @@ def _square(min_x: float, min_y: float, max_x: float, max_y: float):
 
 def test_place_resolver() -> bool:
     """Test historical placename to modern administration resolution offline."""
-    print("\n测试6: 古地名现代行政区划映射...")
+    print("\n测试7: 古地名现代行政区划映射...")
     from place_resolver import BoundaryRecord, ModernBoundaryResolver, resolve_place
 
     boundary_resolver = ModernBoundaryResolver(
@@ -450,7 +491,7 @@ def test_place_resolver() -> bool:
 
 def test_history_map_link() -> bool:
     """Test left-map/right-history route matching with the static index."""
-    print("\n测试7: 左图右史同代一级区划链接...")
+    print("\n测试8: 左图右史同代一级区划链接...")
     from history_map_link import resolve_history_map_link
 
     ok = True
@@ -528,7 +569,7 @@ def test_history_map_link() -> bool:
 
 def test_source_book_index() -> bool:
     """Test source book index parsing and lookup offline."""
-    print("\n测试8: 识典/cnkgraph 书目索引...")
+    print("\n测试9: 识典/cnkgraph 书目索引...")
     from tempfile import TemporaryDirectory
 
     from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_entries, lookup_title_variants
@@ -634,7 +675,7 @@ def test_source_book_index() -> bool:
 
 def test_shidian_link() -> bool:
     """Test Shidian Guji result parsing and verification offline."""
-    print("\n测试9: 识典古籍原文链接验证...")
+    print("\n测试10: 识典古籍原文链接验证...")
     from shidian_link import ShidianLinkError, find_shidian_link
 
     fixture_html = """
@@ -731,6 +772,7 @@ def main() -> int:
     tests = [
         ("依赖", test_imports),
         ("文件完整性", test_files),
+        ("工作流强制门禁", test_workflow_guardrails),
         ("脚本语法", test_scripts_compile),
         ("年号换算", test_dynasty_converter),
         ("EPUB检索", test_epub_search),

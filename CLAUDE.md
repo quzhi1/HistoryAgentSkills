@@ -80,6 +80,7 @@ venv/bin/python scripts/update_source_book_index.py --from-existing  # 只重建
 - `scripts/shidian_link.py` 会读取 `data/source_book_index.sqlite`，优先用 crosswalk 表核对识典书页/cnkgraph 书名；若用户指出识典链接问题或索引缺失，先刷新 `scripts/update_source_book_index.py`
 - `scripts/shidian_link.py` 返回 `not_found`、`invalid`、查询失败，或 `matched_source` 显示为后代类书/总集/别集/注释书/转引页时，必须继续换关键词、原书别名、篇名/卷名、短引或出处二次验证；优先改用能 `resolved` 的原始短引
 - 用户明确要求识典原文链接、答案用于对外发布、或核心结论只靠一两条史料支撑时，核心结论至少要有一条 `resolved` 的识典原文链接；否则不能把无链接答案当完整答案交付，必须继续换源检索或明确说明无法提供合格链接
+- 若一级区划无法从材料确认，仍要不传 `--admin` 跑一次 `scripts/history_map_link.py` 并记录 `needs_admin`；多人物/列表型答案同样逐地名执行，不能因答案短而省略
 - 两个脚本的验证必须在步骤5.7核查清单中有据可查，步骤6进入前不得跳过
 
 **d. 查不到就说查不到。绝不**：

@@ -62,7 +62,7 @@ cd /Users/zhi.q/HistoryAgentSkills
 ```
 
 Claude Code 识别为中国历史问题后会自动触发本 skill，按 `SKILL.md` 工作流答题：查辞典 → 查 cnkgraph 古籍片段 → 标书名+章节名 → 补全六类细节（时间、地点、相关人物、起因、经过、结果）。
-若材料或草稿答案中出现年号纪年，会通过 cnkgraph Calendar API 换算为公元纪年；若最终回答保留古地名，会先列出地名清单，通过 CHGIS/TGAZ + 现代边界库逐一查询今地，并在正文首次出现处自然括注，如“深州乐寿（今河北省沧州市献县）”；若辞典/原文能确认同代一级行政区，会附左图右史地图链接；原文短引必须逐条用识典验证，首次 `not_found` 不得直接省略链接，需换关键词、别名、篇名/卷名或短引二次验证，优先改用可解析到识典原文章节的短引。史料原文与现代汉语译文必须分别另起一段，不混在正文叙述里。搜集史料前可先检索本地史料学 EPUB 判断方向。
+若材料或草稿答案中出现年号纪年，会通过 cnkgraph Calendar API 换算为公元纪年；若最终回答保留古地名，会先列出地名清单，通过 CHGIS/TGAZ + 现代边界库逐一查询今地，并在正文首次出现处自然括注，如“深州乐寿（今河北省沧州市献县）”；随后逐个运行 `scripts/history_map_link.py` 做左图右史核验，能确认同代一级区划时附地图链接，不能确认时也要记录 `needs_admin` / `not_found` / `period_mismatch` 并说明不附链接的原因；多人物/列表型回答同样不能只写今地括注后静默省略地图核验。原文短引必须逐条用识典验证，首次 `not_found` 不得直接省略链接，需换关键词、别名、篇名/卷名或短引二次验证，优先改用可解析到识典原文章节的短引。史料原文与现代汉语译文必须分别另起一段，不混在正文叙述里。搜集史料前可先检索本地史料学 EPUB 判断方向。
 
 ### 方式 2：`/history` 斜杠命令
 
@@ -101,6 +101,9 @@ venv/bin/python scripts/place_resolver.py "长安" --year 755 --json
 
 # 左图右史同代一级行政区地图链接（admin 必须由辞典/原文确认）
 venv/bin/python scripts/history_map_link.py --place "济南" --year 1582 --dynasty "明" --admin "山东布政司" --json
+
+# 若无法从材料确认 admin，也必须不传 --admin 跑一次并记录 needs_admin
+venv/bin/python scripts/history_map_link.py --place "济南" --year 1582 --dynasty "明" --json
 
 # 刷新左图右史索引；输出浏览器可打开的 hash route（/#/pageNN/html?...）
 venv/bin/python scripts/update_history_map_index.py
@@ -188,7 +191,7 @@ HistoryAgentSkills/
 4. **必须补全六类细节**：时间、地点、相关人物、起因、经过、结果
 5. **年号纪年必须保留并换算**：如天宝十四载 → 天宝十四载（公元755年）；不得只写公元年替代史料年号
 6. **古地名首次出现必须标注今地**：凡最终回答保留顺天府、晋阳、长安、凤翔等古地名，先建清单，查 CHGIS/TGAZ 并用现代边界反查；正文首次出现处必须自然括注，如“深州乐寿（今河北省沧州市献县）”，不输出内部技术依据，不等同古今辖境，也不能只在文末补地点清单
-7. **左图右史只给同代同一级行政区链接**：必须先由辞典/原文确认历史一级区划，不能用现代省份反推；匹配不到就不猜；链接必须来自 `data/history_map_index.json` 中的 `/#/pageNN/html?...` hash route，不手写 `/pageNN/html?...` 直连路径
+7. **左图右史逐地名核验，只给同代同一级行政区链接**：最终回答保留的每个古地名都要运行 `scripts/history_map_link.py`；必须先由辞典/原文确认历史一级区划，不能用现代省份反推；确认不到也要不传 `--admin` 跑一次并记录 `needs_admin`，不得静默省略；匹配不到就不猜；链接必须来自 `data/history_map_index.json` 中的 `/#/pageNN/html?...` hash route，不手写 `/pageNN/html?...` 直连路径
 8. **识典原文链接必须验证并追踪失败**：只有短引与出处能匹配到章节页，且 `matched_source` 所属书名与所引原书或公认同书别名一致时，才写“识典原文”；首次 `not_found`、查询失败或命中后代类书/总集/别集/注释书/转引页时，必须换关键词、原书别名、篇名/卷名、短引或出处二次验证，优先改用可 `resolved` 的原始短引；不能把检索页或转引页冒充原书链接，也不能静默省略失败
 9. **EPUB 只作方向**：本地史料学书籍可帮助推断应查哪些史料，但不能替代辞典与古籍原文
 10. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
@@ -221,7 +224,7 @@ HistoryAgentSkills/
 - ✅ 关键词控制 2–6 字，超过 8 字 cnkgraph 常 404；复杂问题用多次短查询交叉验证
 - ✅ 最终答案要保留关键史料原文短引和年号纪年；不要用过去回答或辞典摘要替代重新整理
 - ✅ 古地名今地映射使用 `scripts/place_resolver.py`；最终回答中保留的每个古地名，首次出现处都要括注今地；如果返回歧义、无坐标或无边界命中，必须用自然语言如实说明，不输出脚本状态码或内部实现细节
-- ✅ 左图右史链接使用 `scripts/history_map_link.py`；`--admin` 必须是辞典/原文确认的同时代一级行政区，脚本返回 `resolved` 才能写进答案
+- ✅ 左图右史链接使用 `scripts/history_map_link.py`；`--admin` 必须是辞典/原文确认的同时代一级行政区，脚本返回 `resolved` 才能写进答案；若一级区划无法确认，仍要不传 `--admin` 跑一次并记录 `needs_admin`，多人物/列表型回答也要逐地名交代地图核验结果
 - ✅ 识典原文链接使用 `scripts/shidian_link.py`；脚本会读取 `data/source_book_index.sqlite` 的 crosswalk 表优先核对识典书页与 cnkgraph 书名。返回 `resolved` 且 `matched_source` 原书名核对通过，才能写 `[识典原文](...)`；若候选是后代转引或异书，或返回 `not_found` / `invalid` / 查询失败，必须重新收窄 `--quote` / `--keyword`、改用原书别名或篇名/卷名，优先换成可 `resolved` 的同义证据短引；仍不能确认时要在答案中明示“识典原文链接二次验证未通过”
 - ✅ 书目链接索引用 `scripts/update_source_book_index.py` 刷新；识典来自 sitemap 书页，cnkgraph 来自 `GET /api/Book` 及 `GET /api/Book/{部}/{类}`，`crosswalk` 只做归一化书名能对应上的一对多候选，不手写或猜测书页链接
 - ✅ 修改任何核心规则前，先看 [COMMON_MISTAKES.md](COMMON_MISTAKES.md) 历史踩坑
