@@ -57,8 +57,8 @@ venv/bin/python cnkgraph/scripts/query_api.py book --keyword 崔浩
 
 刷新识典/cnkgraph 书目链接索引（维护时）：
 ```bash
-venv/bin/python scripts/update_source_book_index.py --pretty --verbose
-venv/bin/python scripts/update_source_book_index.py --from-existing --pretty  # 只重建 crosswalk，不联网
+venv/bin/python scripts/update_source_book_index.py --verbose
+venv/bin/python scripts/update_source_book_index.py --from-existing  # 只重建 crosswalk，不联网
 ```
 
 ## 4. 回答历史问题的红线
@@ -77,7 +77,7 @@ venv/bin/python scripts/update_source_book_index.py --from-existing --pretty  # 
 - 凡最终回答保留原文短引，必须逐条运行 `scripts/shidian_link.py`，不得以"找不到"为由直接省略脚本执行
 - 凡最终回答保留古地名，必须逐个运行 `scripts/history_map_link.py`，不得以"不确定"为由直接省略脚本执行
 - **"没有运行脚本后省略"与"运行后 not_found"是两回事**；前者一定违规，后者也不是终点
-- `scripts/shidian_link.py` 会读取 `data/source_book_index.json`，优先用 `crosswalk.entries` 核对识典书页/cnkgraph 书名；若用户指出识典链接问题或索引缺失，先刷新 `scripts/update_source_book_index.py`
+- `scripts/shidian_link.py` 会读取 `data/source_book_index.sqlite`，优先用 crosswalk 表核对识典书页/cnkgraph 书名；若用户指出识典链接问题或索引缺失，先刷新 `scripts/update_source_book_index.py`
 - `scripts/shidian_link.py` 返回 `not_found`、`invalid`、查询失败，或 `matched_source` 显示为后代类书/总集/别集/注释书/转引页时，必须继续换关键词、原书别名、篇名/卷名、短引或出处二次验证；优先改用能 `resolved` 的原始短引
 - 用户明确要求识典原文链接、答案用于对外发布、或核心结论只靠一两条史料支撑时，核心结论至少要有一条 `resolved` 的识典原文链接；否则不能把无链接答案当完整答案交付，必须继续换源检索或明确说明无法提供合格链接
 - 两个脚本的验证必须在步骤5.7核查清单中有据可查，步骤6进入前不得跳过
@@ -107,7 +107,7 @@ venv/bin/python scripts/update_source_book_index.py --from-existing --pretty  # 
 | `scripts/history_query.py` | 综合查询脚本 |
 | `scripts/source_book_index.py` | 识典/cnkgraph 书目索引读取与匹配 |
 | `scripts/update_source_book_index.py` | 刷新识典/cnkgraph 书目链接索引 |
-| `data/source_book_index.json` | 识典/cnkgraph 原始书目与 `crosswalk` 对应索引 |
+| `data/source_book_index.sqlite` | 识典/cnkgraph 书目与 crosswalk 点查索引 |
 | `COMMON_MISTAKES.md` | 历史踩坑记录（修改规则前必读） |
 | `HISTORICAL_SOURCES_GUIDE.md` | 二十四史引用指南 |
 | `setup_venv.sh` | 一键搭环境 |

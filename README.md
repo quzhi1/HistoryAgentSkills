@@ -16,7 +16,7 @@
 | CHGIS/TGAZ + `cnmaps-data` | TGAZ HTTP API + 本地现代行政区边界 | 古地名坐标查询与现代省/市/区县反查 |
 | 左图右史 | [history-map.osgeo.cn](https://history-map.osgeo.cn/) + `data/history_map_index.json` | 同一时代、同一一级行政区历史地图链接 |
 | 识典古籍 | [shidianguji.com/zh/search](https://www.shidianguji.com/zh/search) | 原文短引的可验证章节链接 |
-| 书目链接索引 | `data/source_book_index.json` | `sources` 保留识典/cnkgraph 原始书目，`crosswalk.entries` 显式保存两边同名书的一对多对应 |
+| 书目链接索引 | `data/source_book_index.sqlite` | SQLite 点查索引；保存识典/cnkgraph 书目和两边同名书的一对多 crosswalk |
 
 辞典文件需自行获取放到 `dict/历史辞典4合1.mdx`。cnkgraph API 仅限非商业用途。
 
@@ -109,10 +109,10 @@ venv/bin/python scripts/update_history_map_index.py
 venv/bin/python scripts/shidian_link.py --source "《魏书》卷三五《崔浩传》" --quote "崔浩字伯渊清河人也" --keyword "崔浩" --json
 
 # 刷新识典/cnkgraph 书目链接索引
-venv/bin/python scripts/update_source_book_index.py --pretty --verbose
+venv/bin/python scripts/update_source_book_index.py --verbose
 
-# 不联网，只基于现有 sources 重建 normalized_title 与 crosswalk
-venv/bin/python scripts/update_source_book_index.py --from-existing --pretty
+# 不联网，只基于现有 SQLite 重建 normalized_title 与 crosswalk
+venv/bin/python scripts/update_source_book_index.py --from-existing
 
 # 检索本地史料学 EPUB（只作搜集方向参考）
 venv/bin/python scripts/book_search.py "甲骨文" --limit 5
@@ -171,7 +171,7 @@ HistoryAgentSkills/
 │
 ├── data/
 │   ├── history_map_index.json      # 左图右史精简 route 索引
-│   └── source_book_index.json      # 识典/cnkgraph 原始书目 + crosswalk 对应索引
+│   └── source_book_index.sqlite    # 识典/cnkgraph 书目 + crosswalk 点查索引
 │
 ├── HISTORICAL_SOURCES_GUIDE.md     # 二十四史引用指南
 ├── COMMON_MISTAKES.md              # 历史踩坑记录（修改规则前必读）
@@ -222,7 +222,7 @@ HistoryAgentSkills/
 - ✅ 最终答案要保留关键史料原文短引和年号纪年；不要用过去回答或辞典摘要替代重新整理
 - ✅ 古地名今地映射使用 `scripts/place_resolver.py`；最终回答中保留的每个古地名，首次出现处都要括注今地；如果返回歧义、无坐标或无边界命中，必须用自然语言如实说明，不输出脚本状态码或内部实现细节
 - ✅ 左图右史链接使用 `scripts/history_map_link.py`；`--admin` 必须是辞典/原文确认的同时代一级行政区，脚本返回 `resolved` 才能写进答案
-- ✅ 识典原文链接使用 `scripts/shidian_link.py`；脚本会读取 `data/source_book_index.json` 的 `crosswalk.entries` 优先核对识典书页与 cnkgraph 书名。返回 `resolved` 且 `matched_source` 原书名核对通过，才能写 `[识典原文](...)`；若候选是后代转引或异书，或返回 `not_found` / `invalid` / 查询失败，必须重新收窄 `--quote` / `--keyword`、改用原书别名或篇名/卷名，优先换成可 `resolved` 的同义证据短引；仍不能确认时要在答案中明示“识典原文链接二次验证未通过”
+- ✅ 识典原文链接使用 `scripts/shidian_link.py`；脚本会读取 `data/source_book_index.sqlite` 的 crosswalk 表优先核对识典书页与 cnkgraph 书名。返回 `resolved` 且 `matched_source` 原书名核对通过，才能写 `[识典原文](...)`；若候选是后代转引或异书，或返回 `not_found` / `invalid` / 查询失败，必须重新收窄 `--quote` / `--keyword`、改用原书别名或篇名/卷名，优先换成可 `resolved` 的同义证据短引；仍不能确认时要在答案中明示“识典原文链接二次验证未通过”
 - ✅ 书目链接索引用 `scripts/update_source_book_index.py` 刷新；识典来自 sitemap 书页，cnkgraph 来自 `GET /api/Book` 及 `GET /api/Book/{部}/{类}`，`crosswalk` 只做归一化书名能对应上的一对多候选，不手写或猜测书页链接
 - ✅ 修改任何核心规则前，先看 [COMMON_MISTAKES.md](COMMON_MISTAKES.md) 历史踩坑
 

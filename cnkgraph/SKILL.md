@@ -56,11 +56,11 @@ curl -X POST "https://open.cnkgraph.com/api/Book/Search" \
 
 ### 2a. 古籍全量书目 GET `/api/Book` 与 `/api/Book/{category}/{group}`
 
-`GET /api/Book` 返回古籍库总览（Total、Categories、Groups）；按返回的部类继续请求 `GET /api/Book/{部}/{类}` 可展开具体书目。项目脚本 `scripts/update_source_book_index.py` 使用这两个端点生成 `data/source_book_index.json`：`sources.cnkgraph.books` 保存 cnkgraph 书名、数字 Id、分类、作者、朝代和可验证 API 链接；`crosswalk.entries` 保存能与识典书页按归一化书名对应上的一对多候选。
+`GET /api/Book` 返回古籍库总览（Total、Categories、Groups）；按返回的部类继续请求 `GET /api/Book/{部}/{类}` 可展开具体书目。项目脚本 `scripts/update_source_book_index.py` 使用这两个端点生成 `data/source_book_index.sqlite`：`cnkgraph_books` 保存 cnkgraph 书名、数字 Id、作者、朝代和可验证 API 链接；crosswalk 表保存能与识典书页按归一化书名对应上的一对多候选。
 
 ```bash
-venv/bin/python scripts/update_source_book_index.py --source cnkgraph --merge-existing --pretty --verbose
-venv/bin/python scripts/update_source_book_index.py --from-existing --pretty
+venv/bin/python scripts/update_source_book_index.py --source cnkgraph --merge-existing --verbose
+venv/bin/python scripts/update_source_book_index.py --from-existing
 ```
 
 ### 2b. 古籍原文片段检索 POST `/api/Book/Find`（**历史细节必用**）

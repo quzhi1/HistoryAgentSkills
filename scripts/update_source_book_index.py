@@ -6,6 +6,7 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sqlite3
 import sys
 import time
 from collections import deque
@@ -396,15 +397,79 @@ def _dedupe_crosswalk_books(books: List[Dict[str, Any]]) -> List[Dict[str, Any]]
     return deduped
 
 
+def read_existing_sources(path: Path) -> Dict[str, Any]:
+    if path.suffix in {".sqlite", ".db"}:
+        return read_sqlite_sources(path)
+    with path.open("r", encoding="utf-8") as file:
+        existing = json.load(file)
+    if isinstance(existing, Mapping) and isinstance(existing.get("sources"), Mapping):
+        return dict(existing["sources"])
+    return {}
+
+
+def read_sqlite_sources(path: Path) -> Dict[str, Any]:
+    if not path.exists():
+        return {}
+    conn = sqlite3.connect(path)
+    conn.row_factory = sqlite3.Row
+    try:
+        shidian_books = [
+            {
+                "title": row["title"],
+                "normalized_title": row["normalized_title"],
+                "url": row["url"],
+                "book_id": row["book_id"],
+            }
+            for row in conn.execute(
+                "SELECT title, normalized_title, url, book_id FROM shidian_books ORDER BY normalized_title, url"
+            )
+        ]
+        cnkgraph_books = []
+        for row in conn.execute(
+            """
+            SELECT id, title, normalized_title, author, dynasty, api_url
+            FROM cnkgraph_books
+            ORDER BY normalized_title, id
+            """
+        ):
+            cnkgraph_books.append(
+                {
+                    "id": row["id"],
+                    "title": row["title"],
+                    "normalized_title": row["normalized_title"],
+                    "author": row["author"],
+                    "dynasty": row["dynasty"],
+                    "api_url": row["api_url"],
+                }
+            )
+    finally:
+        conn.close()
+    sources: Dict[str, Any] = {}
+    if shidian_books:
+        sources["shidian"] = {
+            "base_url": SHIDIAN_BASE_URL,
+            "sitemap_url": f"{SHIDIAN_BASE_URL}{SHIDIAN_SITEMAP_PATH}",
+            "book_count": len(shidian_books),
+            "books": shidian_books,
+        }
+    if cnkgraph_books:
+        sources["cnkgraph"] = {
+            "base_api_url": CNKGRAPH_API_BASE,
+            "overview_url": f"{CNKGRAPH_API_BASE}/Book",
+            "book_count": len(cnkgraph_books),
+            "books": cnkgraph_books,
+        }
+    return sources
+
+
 def build_index(args: argparse.Namespace) -> Dict[str, Any]:
     session = requests.Session()
     session.headers.update(REQUEST_HEADERS)
     sources: Dict[str, Any] = {}
-    if (args.merge_existing or args.from_existing) and args.output.exists():
-        with args.output.open("r", encoding="utf-8") as file:
-            existing = json.load(file)
-        if isinstance(existing, Mapping) and isinstance(existing.get("sources"), Mapping):
-            sources.update(existing["sources"])
+    if args.input_json:
+        sources.update(read_existing_sources(args.input_json))
+    elif (args.merge_existing or args.from_existing) and args.output.exists():
+        sources.update(read_existing_sources(args.output))
 
     if args.from_existing:
         sources = normalize_existing_sources(sources)
@@ -461,15 +526,178 @@ def assert_official_url(url: str) -> None:
 
 
 def write_index(index: Mapping[str, Any], output_path: Path, *, pretty: bool) -> None:
+    if output_path.suffix in {".sqlite", ".db"}:
+        write_sqlite_index(index, output_path)
+        return
     output_path.parent.mkdir(parents=True, exist_ok=True)
     with output_path.open("w", encoding="utf-8") as file:
         json.dump(index, file, ensure_ascii=False, indent=2 if pretty else None, separators=None if pretty else (",", ":"))
         file.write("\n")
 
 
+def write_sqlite_index(index: Mapping[str, Any], output_path: Path) -> None:
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    if output_path.exists():
+        output_path.unlink()
+    conn = sqlite3.connect(output_path)
+    try:
+        conn.execute("PRAGMA journal_mode = OFF")
+        conn.execute("PRAGMA synchronous = OFF")
+        create_sqlite_schema(conn)
+        sources = index.get("sources") if isinstance(index.get("sources"), Mapping) else {}
+        shidian_books = (sources.get("shidian") or {}).get("books", []) if isinstance(sources, Mapping) else []
+        cnkgraph_books = (sources.get("cnkgraph") or {}).get("books", []) if isinstance(sources, Mapping) else []
+
+        shidian_rows = {}
+        for book in shidian_books:
+            if not isinstance(book, Mapping) or not book.get("url"):
+                continue
+            canonical_url = canonical_shidian_book_url(str(book.get("url") or ""))
+            title = str(book.get("title") or "")
+            existing = shidian_rows.get(canonical_url)
+            if existing and len(str(existing[0])) <= len(title):
+                continue
+            shidian_rows[canonical_url] = (
+                title,
+                book.get("normalized_title") or normalize_title(title),
+                canonical_url,
+                book.get("book_id") or canonical_url.rstrip("/").rsplit("/", 1)[-1],
+            )
+        conn.executemany(
+            """
+            INSERT INTO shidian_books(title, normalized_title, url, book_id)
+            VALUES (?, ?, ?, ?)
+            """,
+            list(shidian_rows.values()),
+        )
+        conn.executemany(
+            """
+            INSERT INTO cnkgraph_books(id, title, normalized_title, author, dynasty, api_url)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            [
+                (
+                    book.get("id"),
+                    book.get("title"),
+                    book.get("normalized_title"),
+                    book.get("author"),
+                    book.get("dynasty"),
+                    book.get("api_url"),
+                )
+                for book in cnkgraph_books
+                if isinstance(book, Mapping) and book.get("id")
+            ],
+        )
+
+        crosswalk = index.get("crosswalk") if isinstance(index.get("crosswalk"), Mapping) else {}
+        entries = crosswalk.get("entries", []) if isinstance(crosswalk, Mapping) else []
+        conn.executemany(
+            "INSERT INTO crosswalk(normalized_title, match_type, titles_json) VALUES (?, ?, ?)",
+            [
+                (
+                    entry.get("normalized_title"),
+                    entry.get("match_type"),
+                    json.dumps(entry.get("titles") or [], ensure_ascii=False, separators=(",", ":")),
+                )
+                for entry in entries
+                if isinstance(entry, Mapping) and entry.get("normalized_title")
+            ],
+        )
+        conn.executemany(
+            "INSERT OR IGNORE INTO crosswalk_shidian(normalized_title, shidian_url) VALUES (?, ?)",
+            [
+                (entry.get("normalized_title"), canonical_shidian_book_url(str(book.get("url") or "")))
+                for entry in entries
+                if isinstance(entry, Mapping)
+                for book in (entry.get("shidian") or [])
+                if isinstance(book, Mapping) and book.get("url")
+            ],
+        )
+        conn.executemany(
+            "INSERT OR IGNORE INTO crosswalk_cnkgraph(normalized_title, cnkgraph_id) VALUES (?, ?)",
+            [
+                (entry.get("normalized_title"), str(book.get("id")))
+                for entry in entries
+                if isinstance(entry, Mapping)
+                for book in (entry.get("cnkgraph") or [])
+                if isinstance(book, Mapping) and book.get("id") is not None
+            ],
+        )
+
+        metadata = {
+            "schema_version": str(index.get("schema_version") or 1),
+            "generated_at": str(index.get("generated_at") or ""),
+            "shidian_book_count": str(len(shidian_rows)),
+            "cnkgraph_book_count": str(len([book for book in cnkgraph_books if isinstance(book, Mapping)])),
+            "crosswalk_entry_count": str(crosswalk.get("entry_count") or len(entries)),
+            "crosswalk_strategy": str(crosswalk.get("strategy") or ""),
+        }
+        conn.executemany("INSERT INTO metadata(key, value) VALUES (?, ?)", metadata.items())
+        conn.commit()
+        conn.execute("VACUUM")
+    finally:
+        conn.close()
+
+
+def create_sqlite_schema(conn: sqlite3.Connection) -> None:
+    conn.executescript(
+        """
+        CREATE TABLE metadata (
+            key TEXT PRIMARY KEY,
+            value TEXT NOT NULL
+        );
+        CREATE TABLE shidian_books (
+            url TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            normalized_title TEXT NOT NULL,
+            book_id TEXT
+        );
+        CREATE INDEX idx_shidian_books_normalized_title ON shidian_books(normalized_title);
+
+        CREATE TABLE cnkgraph_books (
+            id TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            normalized_title TEXT NOT NULL,
+            author TEXT,
+            dynasty TEXT,
+            api_url TEXT NOT NULL
+        );
+        CREATE INDEX idx_cnkgraph_books_normalized_title ON cnkgraph_books(normalized_title);
+
+        CREATE TABLE crosswalk (
+            normalized_title TEXT PRIMARY KEY,
+            match_type TEXT NOT NULL,
+            titles_json TEXT
+        );
+        CREATE TABLE crosswalk_shidian (
+            normalized_title TEXT NOT NULL,
+            shidian_url TEXT NOT NULL,
+            PRIMARY KEY (normalized_title, shidian_url)
+        );
+        CREATE INDEX idx_crosswalk_shidian_url ON crosswalk_shidian(shidian_url);
+        CREATE TABLE crosswalk_cnkgraph (
+            normalized_title TEXT NOT NULL,
+            cnkgraph_id TEXT NOT NULL,
+            PRIMARY KEY (normalized_title, cnkgraph_id)
+        );
+        CREATE INDEX idx_crosswalk_cnkgraph_id ON crosswalk_cnkgraph(cnkgraph_id);
+        """
+    )
+
+
+def canonical_shidian_book_url(url: str) -> str:
+    parsed = urlparse(url)
+    if parsed.scheme == "https" and parsed.netloc == "www.shidianguji.com":
+        match = re.match(r"^(/(?:zh/)?book/[^/?#]+)", parsed.path)
+        if match:
+            return f"https://www.shidianguji.com{match.group(1)}".replace("/zh/book/", "/book/", 1).rstrip("/")
+    return url.replace("/zh/book/", "/book/", 1).rstrip("/")
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="刷新识典/cnkgraph 书名链接索引")
-    parser.add_argument("--output", type=Path, default=DEFAULT_INDEX_PATH, help="输出 JSON 路径")
+    parser.add_argument("--output", type=Path, default=DEFAULT_INDEX_PATH, help="输出路径（默认 SQLite；.json 后缀则输出 JSON）")
+    parser.add_argument("--input-json", type=Path, help="从已有 JSON sources 迁移/重建索引")
     parser.add_argument("--source", choices=("all", "shidian", "cnkgraph"), default="all", help="刷新哪个来源")
     parser.add_argument("--timeout", type=int, default=DEFAULT_TIMEOUT, help="HTTP 超时时间（秒）")
     parser.add_argument("--sleep", type=float, default=0.05, help="请求间隔（秒）")
@@ -486,8 +714,8 @@ def main() -> int:
         parser.error("--sleep 不能为负数")
     if args.max_shidian_pages is not None and args.max_shidian_pages <= 0:
         parser.error("--max-shidian-pages 必须大于 0")
-    if args.from_existing and not args.output.exists():
-        parser.error("--from-existing 需要已有输出文件")
+    if args.from_existing and not args.output.exists() and not args.input_json:
+        parser.error("--from-existing 需要已有输出文件或 --input-json")
 
     index = build_index(args)
     write_index(index, args.output, pretty=args.pretty)

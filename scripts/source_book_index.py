@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import re
+import sqlite3
 import unicodedata
 from functools import lru_cache
 from pathlib import Path
@@ -15,21 +16,158 @@ from opencc import OpenCC
 
 
 ROOT = Path(__file__).resolve().parents[1]
-DEFAULT_INDEX_PATH = ROOT / "data" / "source_book_index.json"
+DEFAULT_INDEX_PATH = ROOT / "data" / "source_book_index.sqlite"
+LEGACY_JSON_INDEX_PATH = ROOT / "data" / "source_book_index.json"
 SCRIPT_NORMALIZER = OpenCC("t2s")
 TITLE_SUFFIX_RE = re.compile(r"\s*(?:全文原文及译文|全文原文及譯文|全文及译文|全文及譯文|全文原文|原文|全文)\s*$")
 TITLE_NOISE_RE = re.compile(r"[\s,，、.。:：;；!?！？()（）《》〈〉\[\]【】\"'“”‘’\-_/·]+")
 
 
-@lru_cache(maxsize=4)
-def load_source_book_index(path: Path | str = DEFAULT_INDEX_PATH) -> Dict[str, Any]:
+class SQLiteSourceBookIndex:
+    """Small SQLite-backed lookup wrapper for the source book index."""
+
+    def __init__(self, path: Path) -> None:
+        self.path = path
+        self._conn: Optional[sqlite3.Connection] = None
+
+    @property
+    def conn(self) -> sqlite3.Connection:
+        if self._conn is None:
+            self._conn = sqlite3.connect(self.path)
+            self._conn.row_factory = sqlite3.Row
+        return self._conn
+
+    def lookup_title_entries(
+        self,
+        title: str,
+        *,
+        sources: Sequence[str] = ("shidian", "cnkgraph"),
+        include_prefix: bool = True,
+    ) -> List[Mapping[str, Any]]:
+        title_norm = normalize_title(title)
+        if not title_norm:
+            return []
+
+        matches: List[Mapping[str, Any]] = []
+        seen = set()
+        for source, book in self.lookup_crosswalk_books(title_norm, sources=sources):
+            key = _entry_key(source, book)
+            if key not in seen:
+                seen.add(key)
+                matches.append(book)
+
+        for source in sources:
+            for book in self._lookup_raw_books(source, title_norm, include_prefix=include_prefix):
+                key = _entry_key(source, book)
+                if key not in seen:
+                    seen.add(key)
+                    matches.append(book)
+        return matches
+
+    def lookup_crosswalk_books(
+        self,
+        normalized_title: str,
+        *,
+        sources: Sequence[str] = ("shidian", "cnkgraph"),
+    ) -> List[tuple[str, Mapping[str, Any]]]:
+        wanted = set(sources)
+        matches: List[tuple[str, Mapping[str, Any]]] = []
+        if "shidian" in wanted:
+            rows = self.conn.execute(
+                """
+                SELECT b.title, b.normalized_title, b.url, b.book_id
+                FROM crosswalk_shidian x
+                JOIN shidian_books b ON b.url = x.shidian_url
+                WHERE x.normalized_title = ?
+                ORDER BY b.title, b.url
+                """,
+                (normalized_title,),
+            ).fetchall()
+            matches.extend(("shidian", _row_to_dict(row)) for row in rows)
+        if "cnkgraph" in wanted:
+            rows = self.conn.execute(
+                """
+                SELECT b.id, b.title, b.normalized_title, b.author, b.dynasty, b.api_url
+                FROM crosswalk_cnkgraph x
+                JOIN cnkgraph_books b ON b.id = x.cnkgraph_id
+                WHERE x.normalized_title = ?
+                ORDER BY b.title, b.id
+                """,
+                (normalized_title,),
+            ).fetchall()
+            matches.extend(("cnkgraph", _cnkgraph_row_to_dict(row)) for row in rows)
+        return matches
+
+    def find_shidian_book_by_url(self, url: str) -> Optional[Mapping[str, Any]]:
+        book_url = shidian_book_url_from_any(url)
+        if not book_url:
+            return None
+        canonical_url = _canonical_shidian_book_url(book_url)
+        row = self.conn.execute(
+            """
+            SELECT title, normalized_title, url, book_id
+            FROM shidian_books
+            WHERE url = ?
+            LIMIT 1
+            """,
+            (canonical_url,),
+        ).fetchone()
+        return _row_to_dict(row) if row else None
+
+    def _lookup_raw_books(self, source: str, title_norm: str, *, include_prefix: bool) -> List[Mapping[str, Any]]:
+        if source == "shidian":
+            params: tuple[Any, ...]
+            where = "normalized_title = ?"
+            params = (title_norm,)
+            if include_prefix:
+                where = "(normalized_title = ? OR normalized_title LIKE ?)"
+                params = (title_norm, f"{title_norm}%")
+            rows = self.conn.execute(
+                f"""
+                SELECT title, normalized_title, url, book_id
+                FROM shidian_books
+                WHERE {where}
+                ORDER BY CASE WHEN normalized_title = ? THEN 0 ELSE 1 END, title, url
+                """,
+                (*params, title_norm),
+            ).fetchall()
+            return [_row_to_dict(row) for row in rows]
+        if source == "cnkgraph":
+            params = (title_norm,)
+            where = "normalized_title = ?"
+            if include_prefix:
+                where = "(normalized_title = ? OR normalized_title LIKE ?)"
+                params = (title_norm, f"{title_norm}%")
+            rows = self.conn.execute(
+                f"""
+                SELECT id, title, normalized_title, author, dynasty, api_url
+                FROM cnkgraph_books
+                WHERE {where}
+                ORDER BY CASE WHEN normalized_title = ? THEN 0 ELSE 1 END, title, id
+                """,
+                (*params, title_norm),
+            ).fetchall()
+            return [_cnkgraph_row_to_dict(row) for row in rows]
+        return []
+
+
+def load_source_book_index(path: Path | str = DEFAULT_INDEX_PATH) -> Any:
     """Load the generated Shidian/cnkgraph book index.
 
-    Missing indexes are treated as empty so validators can fail closed without
-    blocking a history answer; the refresh script is responsible for creating it.
+    The default is SQLite for fast point lookups. Legacy JSON is still accepted
+    for tests and one-time migrations.
     """
 
-    index_path = Path(path)
+    return _load_source_book_index(str(Path(path)))
+
+
+@lru_cache(maxsize=4)
+def _load_source_book_index(path_str: str) -> Any:
+    index_path = Path(path_str)
+    if index_path.exists() and index_path.suffix in {".sqlite", ".db"}:
+        return SQLiteSourceBookIndex(index_path)
+    if not index_path.exists() and index_path == DEFAULT_INDEX_PATH and LEGACY_JSON_INDEX_PATH.exists():
+        index_path = LEGACY_JSON_INDEX_PATH
     if not index_path.exists():
         return {"schema_version": 1, "sources": {}}
     with index_path.open("r", encoding="utf-8") as file:
@@ -56,7 +194,9 @@ def collapse_space(text: str) -> str:
     return re.sub(r"\s+", " ", text).strip()
 
 
-def source_books(index: Optional[Mapping[str, Any]], source: str) -> List[Mapping[str, Any]]:
+def source_books(index: Optional[Any], source: str) -> List[Mapping[str, Any]]:
+    if isinstance(index, SQLiteSourceBookIndex):
+        return index._lookup_raw_books(source, "", include_prefix=False)
     if not index:
         return []
     sources = index.get("sources") if isinstance(index, Mapping) else None
@@ -74,20 +214,23 @@ def source_books(index: Optional[Mapping[str, Any]], source: str) -> List[Mappin
 def lookup_title_entries(
     title: str,
     *,
-    index: Optional[Mapping[str, Any]] = None,
+    index: Optional[Any] = None,
     sources: Sequence[str] = ("shidian", "cnkgraph"),
     include_prefix: bool = True,
 ) -> List[Mapping[str, Any]]:
     """Find book entries whose normalized title matches or extends ``title``."""
 
+    data = index or load_source_book_index()
+    if isinstance(data, SQLiteSourceBookIndex):
+        return data.lookup_title_entries(title, sources=sources, include_prefix=include_prefix)
+
     title_norm = normalize_title(title)
     if not title_norm:
         return []
-    data = index or load_source_book_index()
     matches: List[Mapping[str, Any]] = []
     seen = set()
     for source, book in lookup_crosswalk_books(title_norm, data, sources=sources):
-        key = (source, str(book.get("id") or book.get("book_id") or book.get("url") or book.get("api_url")))
+        key = _entry_key(source, book)
         if key not in seen:
             seen.add(key)
             matches.append(book)
@@ -100,7 +243,7 @@ def lookup_title_entries(
                 short_norm,
                 include_prefix=include_prefix,
             ):
-                key = (source, str(book.get("id") or book.get("book_id") or book.get("url") or book.get("api_url")))
+                key = _entry_key(source, book)
                 if key not in seen:
                     seen.add(key)
                     matches.append(book)
@@ -110,7 +253,7 @@ def lookup_title_entries(
 def lookup_title_variants(
     title: str,
     *,
-    index: Optional[Mapping[str, Any]] = None,
+    index: Optional[Any] = None,
     sources: Sequence[str] = ("shidian", "cnkgraph"),
 ) -> set[str]:
     """Return normalized title variants present in the local source index."""
@@ -125,12 +268,14 @@ def lookup_title_variants(
 
 def lookup_crosswalk_books(
     normalized_title: str,
-    index: Mapping[str, Any],
+    index: Any,
     *,
     sources: Sequence[str] = ("shidian", "cnkgraph"),
 ) -> List[tuple[str, Mapping[str, Any]]]:
     """Return source-tagged books from the explicit crosswalk, if present."""
 
+    if isinstance(index, SQLiteSourceBookIndex):
+        return index.lookup_crosswalk_books(normalized_title, sources=sources)
     crosswalk = index.get("crosswalk") if isinstance(index, Mapping) else None
     if not isinstance(crosswalk, Mapping):
         return []
@@ -165,14 +310,17 @@ def short_title(title: str) -> str:
 def find_shidian_book_by_url(
     url: str,
     *,
-    index: Optional[Mapping[str, Any]] = None,
+    index: Optional[Any] = None,
 ) -> Optional[Mapping[str, Any]]:
     """Return a Shidian book entry matching a book or chapter URL."""
+
+    data = index or load_source_book_index()
+    if isinstance(data, SQLiteSourceBookIndex):
+        return data.find_shidian_book_by_url(url)
 
     book_url = shidian_book_url_from_any(url)
     if not book_url:
         return None
-    data = index or load_source_book_index()
     accepted = {_canonical_shidian_book_url(book_url)}
     parsed = urlparse(book_url)
     if parsed.path.startswith("/zh/book/"):
@@ -203,6 +351,25 @@ def iter_title_norms(entries: Iterable[Mapping[str, Any]]) -> Iterable[str]:
         title = str(entry.get("title") or "")
         yield normalize_title(title)
         yield normalize_title(short_title(title))
+
+
+def _row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
+    return dict(row)
+
+
+def _cnkgraph_row_to_dict(row: sqlite3.Row) -> Dict[str, Any]:
+    item = dict(row)
+    categories = item.pop("categories_json", None)
+    item.setdefault("site_url", None)
+    try:
+        item["categories"] = json.loads(categories) if categories else []
+    except json.JSONDecodeError:
+        item["categories"] = []
+    return item
+
+
+def _entry_key(source: str, entry: Mapping[str, Any]) -> tuple[str, str]:
+    return (source, str(entry.get("id") or entry.get("book_id") or entry.get("url") or entry.get("api_url")))
 
 
 def _title_norm_matches(query_norm: str, book_norm: str, *, include_prefix: bool = True) -> bool:

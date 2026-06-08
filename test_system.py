@@ -82,7 +82,7 @@ def test_files() -> bool:
         "scripts/update_history_map_index.py",
         "scripts/update_source_book_index.py",
         "data/history_map_index.json",
-        "data/source_book_index.json",
+        "data/source_book_index.sqlite",
         "SKILL.md",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
@@ -529,8 +529,10 @@ def test_history_map_link() -> bool:
 def test_source_book_index() -> bool:
     """Test source book index parsing and lookup offline."""
     print("\n测试8: 识典/cnkgraph 书目索引...")
-    from source_book_index import find_shidian_book_by_url, lookup_title_entries, lookup_title_variants
-    from update_source_book_index import build_crosswalk, normalize_cnkgraph_book, normalize_existing_sources, parse_shidian_sitemap
+    from tempfile import TemporaryDirectory
+
+    from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_entries, lookup_title_variants
+    from update_source_book_index import build_crosswalk, normalize_cnkgraph_book, normalize_existing_sources, parse_shidian_sitemap, write_index
 
     fixture_html = """
     <html><body>
@@ -607,6 +609,25 @@ def test_source_book_index() -> bool:
     else:
         print(f"✗ 本地书名索引查找失败: variants={variants}, entries={entries}")
         ok = False
+
+    with TemporaryDirectory() as tmpdir:
+        sqlite_path = Path(tmpdir) / "source_book_index.sqlite"
+        write_index(
+            {"schema_version": 1, "generated_at": "fixture", "sources": sources, "crosswalk": crosswalk},
+            sqlite_path,
+            pretty=False,
+        )
+        sqlite_index = load_source_book_index(sqlite_path)
+        sqlite_entries = lookup_title_entries("毛诗", index=sqlite_index)
+        sqlite_found = find_shidian_book_by_url(
+            "https://www.shidianguji.com/zh/book/NA0001/chapter/abc",
+            index=sqlite_index,
+        )
+        if sqlite_found and sqlite_found["url"] == "https://www.shidianguji.com/book/NA0001" and sqlite_entries:
+            print("✓ SQLite 书目索引可点查书名与识典章节 URL")
+        else:
+            print(f"✗ SQLite 书目索引查询失败: found={sqlite_found}, entries={sqlite_entries}")
+            ok = False
 
     return ok
 
