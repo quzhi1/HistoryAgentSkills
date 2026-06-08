@@ -78,8 +78,11 @@ def test_files() -> bool:
         "scripts/place_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
+        "scripts/source_book_index.py",
         "scripts/update_history_map_index.py",
+        "scripts/update_source_book_index.py",
         "data/history_map_index.json",
+        "data/source_book_index.json",
         "SKILL.md",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
@@ -120,7 +123,9 @@ def test_scripts_compile() -> bool:
         "scripts/place_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
+        "scripts/source_book_index.py",
         "scripts/update_history_map_index.py",
+        "scripts/update_source_book_index.py",
     ]
     result = subprocess.run(
         [str(ROOT / "venv" / "bin" / "python"), "-m", "py_compile", *scripts],
@@ -521,9 +526,74 @@ def test_history_map_link() -> bool:
     return ok
 
 
+def test_source_book_index() -> bool:
+    """Test source book index parsing and lookup offline."""
+    print("\n测试8: 识典/cnkgraph 书目索引...")
+    from source_book_index import find_shidian_book_by_url, lookup_title_entries, lookup_title_variants
+    from update_source_book_index import normalize_cnkgraph_book, parse_shidian_sitemap
+
+    fixture_html = """
+    <html><body>
+      <a href="/sitemap-book-1">1</a>
+      <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fwww.shidianguji.com%2Fzh%2Fbook%2FNA0001">
+        毛詩 全文原文
+      </a>
+      <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fevil.example%2Fbook%2Fbad">
+        不应保存
+      </a>
+    </body></html>
+    """
+    ok = True
+    parsed = parse_shidian_sitemap(fixture_html, sitemap_path="/sitemap-book")
+    if parsed["sitemap_paths"] == ["/sitemap-book-1"] and len(parsed["books"]) == 1:
+        book = parsed["books"][0]
+        if book["title"] == "毛詩" and book["url"] == "https://www.shidianguji.com/zh/book/NA0001":
+            print("✓ 识典 sitemap 安全跳转可还原为官方书页")
+        else:
+            print(f"✗ 识典书页解析字段错误: {book}")
+            ok = False
+    else:
+        print(f"✗ 识典 sitemap 解析失败: {parsed}")
+        ok = False
+
+    cnkgraph_book = normalize_cnkgraph_book(
+        {"Id": 2681, "Name": "清史稿", "Author": "赵尔巽等撰", "Dynasty": "近现代"},
+        "史部",
+        "正史类",
+    )
+    if cnkgraph_book["api_url"] == "https://open.cnkgraph.com/api/Book/2681" and cnkgraph_book["title"] == "清史稿":
+        print("✓ cnkgraph 分组书目归一化为可验证 API 链接")
+    else:
+        print(f"✗ cnkgraph 书目归一化失败: {cnkgraph_book}")
+        ok = False
+
+    sample_index = {
+        "sources": {
+            "shidian": {"books": parsed["books"]},
+            "cnkgraph": {"books": [cnkgraph_book]},
+        }
+    }
+    found = find_shidian_book_by_url("https://www.shidianguji.com/zh/book/NA0001/chapter/abc", index=sample_index)
+    if found and found["title"] == "毛詩":
+        print("✓ 可从识典章节 URL 反查本地书目索引")
+    else:
+        print(f"✗ 章节 URL 反查书目失败: {found}")
+        ok = False
+
+    variants = lookup_title_variants("清史稿", index=sample_index)
+    entries = lookup_title_entries("清史稿", index=sample_index)
+    if "清史稿" in variants and entries and entries[0]["api_url"].endswith("/Book/2681"):
+        print("✓ 书名可在本地索引中查到对应来源链接")
+    else:
+        print(f"✗ 本地书名索引查找失败: variants={variants}, entries={entries}")
+        ok = False
+
+    return ok
+
+
 def test_shidian_link() -> bool:
     """Test Shidian Guji result parsing and verification offline."""
-    print("\n测试8: 识典古籍原文链接验证...")
+    print("\n测试9: 识典古籍原文链接验证...")
     from shidian_link import ShidianLinkError, find_shidian_link
 
     fixture_html = """
@@ -625,6 +695,7 @@ def main() -> int:
         ("EPUB检索", test_epub_search),
         ("古地名映射", test_place_resolver),
         ("左图右史链接", test_history_map_link),
+        ("书目索引", test_source_book_index),
         ("识典链接", test_shidian_link),
     ]
 

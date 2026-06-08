@@ -15,6 +15,7 @@ from urllib.parse import quote, urljoin
 import requests
 from opencc import OpenCC
 
+from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_variants
 
 BASE_URL = "https://www.shidianguji.com"
 SEARCH_BASE = f"{BASE_URL}/zh/search"
@@ -33,6 +34,8 @@ STATUS_INVALID = "invalid"
 CHAPTER_HREF_PATTERN = re.compile(r"^/(?:zh/)?book/[^/\s]+/chapter/[^?\s#]+")
 SCRIPT_NORMALIZER = OpenCC("t2s")
 SOURCE_TITLE_ALIASES = {
+    "诗经": ("毛诗", "诗三百", "毛诗郑笺", "诗经集传"),
+    "毛诗": ("诗经", "诗三百", "毛诗郑笺", "诗经集传"),
     "庄子": ("南华经", "南华真经", "南华真经注疏", "庄子注", "庄子集释"),
     "南华经": ("庄子", "南华真经", "南华真经注疏", "庄子注", "庄子集释"),
     "南华真经": ("庄子", "南华经", "南华真经注疏", "庄子注", "庄子集释"),
@@ -179,16 +182,23 @@ def parse_search_results(html: str) -> List[Dict[str, str]]:
     parser.feed(html)
     seen = set()
     results: List[Dict[str, str]] = []
+    source_index = load_source_book_index()
     for item in parser.results:
         href = item["href"]
         if href in seen:
             continue
         seen.add(href)
+        url = urljoin(BASE_URL, href)
+        result = {
+            "url": url,
+            "text": collapse_space(item["text"]),
+        }
+        indexed_book = find_shidian_book_by_url(url, index=source_index)
+        if indexed_book:
+            result["book_title"] = str(indexed_book.get("title") or "")
+            result["book_url"] = str(indexed_book.get("url") or "")
         results.append(
-            {
-                "url": urljoin(BASE_URL, href),
-                "text": collapse_space(item["text"]),
-            }
+            result
         )
     return results
 
@@ -199,7 +209,7 @@ def score_candidates(candidates: Iterable[Mapping[str, str]], quote_text: str, s
     for candidate in candidates:
         text = candidate.get("text") or ""
         quote_score = text_overlap_score(quote_text, text)
-        primary_source_score = primary_source_match_score(source_terms, text)
+        primary_source_score = primary_source_match_score(source_terms, text, candidate.get("book_title"))
         source_score = source_match_score(source_terms, text)
         total = quote_score + primary_source_score + min(source_score, 20)
         if quote_score >= 45 or primary_source_score > 0 or source_score > 0:
@@ -207,6 +217,8 @@ def score_candidates(candidates: Iterable[Mapping[str, str]], quote_text: str, s
                 {
                     "url": candidate.get("url"),
                     "text": text,
+                    "book_title": candidate.get("book_title"),
+                    "book_url": candidate.get("book_url"),
                     "score": total,
                     "quote_score": quote_score,
                     "primary_source_score": primary_source_score,
@@ -248,7 +260,7 @@ def source_match_score(source_terms: Sequence[str], text: str) -> int:
     return score
 
 
-def primary_source_match_score(source_terms: Sequence[str], text: str) -> int:
+def primary_source_match_score(source_terms: Sequence[str], text: str, indexed_book_title: Optional[str] = None) -> int:
     """Prefer the chapter whose owning book matches the cited primary source.
 
     Shidian search can return later anthologies or reference works that quote the
@@ -259,11 +271,20 @@ def primary_source_match_score(source_terms: Sequence[str], text: str) -> int:
     if not source_terms:
         return 0
     accepted_titles = source_title_variants(source_terms[0])
-    candidate_titles = extract_source_terms(text)
+    candidate_titles = []
+    if indexed_book_title:
+        candidate_titles.append(indexed_book_title)
+    candidate_titles.extend(extract_source_terms(text))
     if candidate_titles:
         for title in candidate_titles:
             candidate_norm = normalize_for_match(title)
-            if any(candidate_norm == accepted or candidate_norm.startswith(accepted) for accepted in accepted_titles):
+            candidate_variants = source_title_variants(title)
+            if accepted_titles.intersection(candidate_variants):
+                return 70
+            if any(
+                candidate_norm == accepted or (len(accepted) >= 2 and candidate_norm.startswith(accepted))
+                for accepted in accepted_titles
+            ):
                 return 70
         return 0
 
@@ -276,6 +297,7 @@ def primary_source_match_score(source_terms: Sequence[str], text: str) -> int:
 def source_title_variants(title: str) -> set[str]:
     normalized_title = normalize_for_match(title)
     variants = {normalized_title}
+    variants.update(lookup_title_variants(title))
     for canonical, aliases in SOURCE_TITLE_ALIASES.items():
         normalized_group = {normalize_for_match(canonical)}
         normalized_group.update(normalize_for_match(alias) for alias in aliases)

@@ -54,6 +54,14 @@ curl -X POST "https://open.cnkgraph.com/api/Book/Search" \
   -d '"关键词"'
 ```
 
+### 2a. 古籍全量书目 GET `/api/Book` 与 `/api/Book/{category}/{group}`
+
+`GET /api/Book` 返回古籍库总览（Total、Categories、Groups）；按返回的部类继续请求 `GET /api/Book/{部}/{类}` 可展开具体书目。项目脚本 `scripts/update_source_book_index.py` 使用这两个端点生成 `data/source_book_index.json`，保存 cnkgraph 书名、数字 Id、分类、作者、朝代和可验证 API 链接。
+
+```bash
+venv/bin/python scripts/update_source_book_index.py --source cnkgraph --merge-existing --pretty --verbose
+```
+
 ### 2b. 古籍原文片段检索 POST `/api/Book/Find`（**历史细节必用**）
 
 请求体为 **BookModel**（JSON 对象）：`Key`（关键词，必填）、`PageNo`（页码，0 起）、可选 `BookIds`。  
@@ -122,7 +130,7 @@ curl "https://open.cnkgraph.com/api/People/苏轼"
 
 2. **构建查询**：根据用户问题提取关键参数；必要时多组关键词（人名+事件短语）检索。
 
-3. **执行API调用**：使用脚本或 curl/requests；**原文片段用 Book/Find**（`find --keyword`），书目用 Book/Search（`book --keyword`）。
+3. **执行API调用**：使用脚本或 curl/requests；**原文片段用 Book/Find**（`find --keyword`），关键词书目用 Book/Search（`book --keyword`），全量书目索引用 `/api/Book` + `/api/Book/{部}/{类}`。
 
 4. **解析结果**：Book/Find 的 Result 中提取 PreviousText+MatchedText+LaterText 组成可引用片段；记录 Book、Volume 作为出处。
 
