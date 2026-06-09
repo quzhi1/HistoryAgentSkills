@@ -14,11 +14,12 @@ import argparse
 import json
 import re
 from pathlib import Path
-from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence
+from typing import Any, Dict, Iterable, List, Mapping, Optional, Sequence, Tuple
 
 from history_map_link import (
     DEFAULT_INDEX_PATH,
     HistoryMapLinkError,
+    STATUS_OVERVIEW as MAP_STATUS_OVERVIEW,
     label_core,
     load_index,
     normalize_text,
@@ -31,6 +32,7 @@ from place_resolver import (
     MAX_PLACE_NAME_LENGTH,
     ModernBoundaryResolver,
     PlaceResolverError,
+    STATUS_AMBIGUOUS as PLACE_STATUS_AMBIGUOUS,
     TgazClient,
     resolve_place,
     validate_place_name,
@@ -42,6 +44,21 @@ MAX_HINT_LENGTH = 80
 MAX_CANDIDATES = 12
 MAX_LOOKUP_NAMES = 8
 HINT_PATTERN = re.compile(r"^[\w\s\-\u4e00-\u9fff·'’().（）、，/]+$", re.UNICODE)
+OVERVIEW_ADMIN_SUFFIXES = (
+    "承宣布政使司",
+    "布政使司",
+    "布政司",
+    "行中书省",
+    "中书省",
+    "行省",
+    "刺史部",
+    "宣慰司",
+    "都司",
+    "省",
+    "道",
+    "路",
+    "诸郡",
+)
 PLACE_SUFFIX_PATTERN = (
     r"(?:承宣布政使司|布政使司|布政司|行中书省|中书省|行省|刺史部|"
     r"宣慰司|都司|县|州|郡|府|路|道|军|监|厅|卫|所|镇|关|城|寨|堡|邑)"
@@ -93,6 +110,7 @@ DYNASTY_PREFIXES = (
 )
 DYNASTY_PREFIX_PATTERN = rf"(?:{'|'.join(DYNASTY_PREFIXES)})"
 STATUS_RESOLVED = "resolved"
+STATUS_OVERVIEW = "overview"
 STATUS_NEEDS_CANDIDATES = "needs_candidates"
 STATUS_NEEDS_ADMIN = "needs_admin"
 STATUS_NOT_FOUND = "not_found"
@@ -188,36 +206,45 @@ def resolve_place_admin(
             boundary_resolver=boundary_resolver,
         )
         result["candidate_results"].append(summarize_candidate_result(candidate_name, candidate_result))
-        if candidate_result.get("status") != STATUS_RESOLVED:
-            continue
-        if not modern_hint_matches(checked_modern_hint, candidate_result):
-            continue
 
-        best_match = candidate_result.get("best_match") or {}
-        modern_match = candidate_result.get("modern_administration")
-        admin_candidates = derive_admin_candidates(best_match, checked_year, checked_dynasty, index_path=index_path)
-        if first_matched_place is None:
-            first_matched_place = best_match
-            first_modern_match = modern_match
-            first_admin_candidates = admin_candidates
-        for admin_candidate in admin_candidates:
-            map_link = resolve_history_map_link(
-                checked_place,
-                checked_year,
-                admin_candidate["admin"],
-                dynasty=checked_dynasty,
-                index_path=index_path,
-            )
-            admin_candidate["map_status"] = map_link.get("status")
-            admin_candidate["map_reason"] = map_link.get("reason")
-            if map_link.get("status") == STATUS_RESOLVED:
-                result["status"] = STATUS_RESOLVED
-                result["historical_place"] = best_match
-                result["modern_match"] = modern_match
-                result["admin_candidates"] = admin_candidates
-                result["map_link"] = map_link
-                result["reason"] = "已由现代地点线索反查到目标年份历史地名，并验证左图右史地图"
-                return result
+        for place_check in inspectable_place_results(candidate_result, checked_modern_hint, boundary_resolver):
+            if not modern_hint_matches(checked_modern_hint, place_check):
+                continue
+
+            best_match = place_check.get("best_match") or {}
+            modern_match = place_check.get("modern_administration")
+            admin_candidates = derive_admin_candidates(best_match, checked_year, checked_dynasty, index_path=index_path)
+            if first_matched_place is None:
+                first_matched_place = best_match
+                first_modern_match = modern_match
+                first_admin_candidates = admin_candidates
+            for admin_candidate in admin_candidates:
+                map_link = resolve_history_map_link(
+                    checked_place,
+                    checked_year,
+                    admin_candidate["admin"],
+                    dynasty=checked_dynasty,
+                    index_path=index_path,
+                    allow_overview=can_use_overview_fallback(admin_candidate["admin"]),
+                )
+                admin_candidate["map_status"] = map_link.get("status")
+                admin_candidate["map_reason"] = map_link.get("reason")
+                if map_link.get("status") == STATUS_RESOLVED:
+                    result["status"] = STATUS_RESOLVED
+                    result["historical_place"] = best_match
+                    result["modern_match"] = modern_match
+                    result["admin_candidates"] = admin_candidates
+                    result["map_link"] = map_link
+                    result["reason"] = "已由现代地点线索反查到目标年份历史地名，并验证左图右史地图"
+                    return result
+                if map_link.get("status") == MAP_STATUS_OVERVIEW:
+                    result["status"] = STATUS_OVERVIEW
+                    result["historical_place"] = best_match
+                    result["modern_match"] = modern_match
+                    result["admin_candidates"] = admin_candidates
+                    result["map_link"] = map_link
+                    result["reason"] = "已匹配目标年份历史地名和现代地点线索；同代一级区划专题图缺失，已回退到同一时代总图"
+                    return result
 
     if first_matched_place is not None:
         result["status"] = STATUS_NEEDS_ADMIN
@@ -230,6 +257,49 @@ def resolve_place_admin(
     result["status"] = STATUS_NOT_FOUND
     result["reason"] = "候选历史地名未能在目标年份解析，或其现代落点与线索不符"
     return result
+
+
+def inspectable_place_results(
+    candidate_result: Mapping[str, Any],
+    modern_hint: Optional[str],
+    boundary_resolver: Optional[ModernBoundaryResolver],
+) -> List[Dict[str, Any]]:
+    """Return resolved-like records that are safe to check for admin labels."""
+
+    if candidate_result.get("status") == STATUS_RESOLVED:
+        return [dict(candidate_result)]
+    if candidate_result.get("status") != PLACE_STATUS_AMBIGUOUS:
+        return []
+
+    # Ambiguous TGAZ results need a modern clue to choose between same-scored
+    # historical names. Without that clue, continuing would be a guess.
+    if not modern_hint:
+        return []
+
+    resolver = boundary_resolver or ModernBoundaryResolver.from_cnmaps_data()
+    checks: List[Dict[str, Any]] = []
+    for candidate in candidate_result.get("candidates") or []:
+        if not isinstance(candidate, Mapping):
+            continue
+        longitude = candidate.get("longitude")
+        latitude = candidate.get("latitude")
+        if longitude is None or latitude is None:
+            continue
+        try:
+            modern_administration = resolver.reverse_geocode(float(longitude), float(latitude))
+        except (TypeError, ValueError):
+            modern_administration = None
+        checks.append(
+            {
+                "query": candidate_result.get("query"),
+                "status": STATUS_RESOLVED,
+                "best_match": dict(candidate),
+                "candidates": candidate_result.get("candidates") or [],
+                "modern_administration": modern_administration,
+                "note": "TGAZ 歧义候选经现代地点线索逐一核验",
+            }
+        )
+    return checks
 
 
 def validate_optional_hint(value: Optional[str], label: str) -> Optional[str]:
@@ -394,8 +464,8 @@ def derive_admin_candidates(
     """Derive possible map admin labels, leaving final validation to history_map_link."""
 
     raw_admins: List[str] = []
+    raw_admins.extend(extract_admins_from_note(str(best_match.get("source_note") or ""), year=year))
     raw_admins.extend(split_parent_admins(str(best_match.get("parent") or "")))
-    raw_admins.extend(extract_admins_from_note(str(best_match.get("source_note") or "")))
     raw_admins = dedupe(raw_admins)
 
     candidates: List[Dict[str, Any]] = []
@@ -420,12 +490,30 @@ def split_parent_admins(text: str) -> List[str]:
     return values
 
 
-def extract_admins_from_note(text: str) -> List[str]:
-    admins: List[str] = []
+def can_use_overview_fallback(admin: str) -> bool:
+    return any(admin.endswith(suffix) for suffix in OVERVIEW_ADMIN_SUFFIXES)
+
+
+def extract_admins_from_note(text: str, year: Optional[int] = None) -> List[str]:
+    clean = re.sub(r"<[^>]+>", "；", text or "")
+    mentions: List[Tuple[str, Optional[int], int]] = []
     pattern = r"(?:属|隶|为|置为|改为)([\u4e00-\u9fff]{2,12}(?:州|郡|道|路|府|省|布政司|行省|都司))"
-    for match in re.finditer(pattern, text):
-        admins.append(match.group(1))
-    return admins
+    for match in re.finditer(pattern, clean):
+        mentions.append((match.group(1), nearest_preceding_year(clean, match.start()), match.start()))
+
+    if year is not None:
+        dated = [(admin, admin_year, pos) for admin, admin_year, pos in mentions if admin_year is not None and admin_year <= year]
+        if dated:
+            latest_year = max(admin_year for _, admin_year, _ in dated if admin_year is not None)
+            return dedupe(admin for admin, admin_year, _ in dated if admin_year == latest_year)
+
+    return dedupe(admin for admin, _, _ in mentions)
+
+
+def nearest_preceding_year(text: str, position: int) -> Optional[int]:
+    window = text[max(0, position - 96) : position]
+    years = [int(match.group(1)) for match in re.finditer(r"(?<!\d)(-?\d{1,4})\s*年", window)]
+    return years[-1] if years else None
 
 
 def index_admin_variants(admin: str, year: int, dynasty: Optional[str], index_path: Path) -> List[Dict[str, Any]]:
@@ -519,11 +607,19 @@ def modern_hint_matches(modern_hint: Optional[str], candidate_result: Mapping[st
 def modern_texts(candidate_result: Mapping[str, Any]) -> Iterable[str]:
     best_match = candidate_result.get("best_match") or {}
     yield str(best_match.get("present_location") or "")
-    yield str(best_match.get("source_note") or "")
+    yield from modern_snippets_from_note(str(best_match.get("source_note") or ""))
     admin = candidate_result.get("modern_administration") or {}
     if isinstance(admin, Mapping):
         yield "".join(str(admin.get(key) or "") for key in ("province", "city", "district"))
         yield str(admin.get("matched_name") or "")
+
+
+def modern_snippets_from_note(text: str) -> Iterable[str]:
+    if not text:
+        return []
+    clean = re.sub(r"<[^>]+>", "；", text)
+    pattern = r"(?:即今|治今|在今|移治于今|治所约在今|今)([\u4e00-\u9fff]{2,24}?)(?=[，。、；\s()（）]|$)"
+    return [match.group(1) for match in re.finditer(pattern, clean)]
 
 
 def summarize_candidate_result(candidate_name: str, result: Mapping[str, Any]) -> Dict[str, Any]:
@@ -575,6 +671,8 @@ def dedupe_admin_candidates(candidates: Iterable[Mapping[str, Any]]) -> List[Dic
 def normalize_for_match(text: str) -> str:
     text = re.sub(r"[\s,，、.。:：;；()（）《》〈〉\[\]【】\-_/]+", "", text.strip())
     text = re.sub(r"^(今|治今|约在今|在今|治所约在今)", "", text)
+    for suffix in ("特别行政区", "自治州", "自治县", "地区", "省", "市", "区", "县", "旗"):
+        text = text.replace(suffix, "")
     return text
 
 
@@ -589,6 +687,10 @@ def format_text(result: Mapping[str, Any]) -> str:
         historical_place = result.get("historical_place") or {}
         map_link = result.get("map_link") or {}
         return f"{historical_place.get('name')}: {map_link.get('map_label')} {map_link.get('url')}"
+    if result.get("status") == STATUS_OVERVIEW:
+        historical_place = result.get("historical_place") or {}
+        map_link = result.get("map_link") or {}
+        return f"{historical_place.get('name')}: {map_link.get('map_label')}（时代总图） {map_link.get('url')}"
     return f"{result.get('status')}: {result.get('reason')}"
 
 
@@ -639,7 +741,7 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         print(format_text(result))
-    return 0 if result.get("status") == STATUS_RESOLVED else 1
+    return 0 if result.get("status") in {STATUS_RESOLVED, STATUS_OVERVIEW} else 1
 
 
 if __name__ == "__main__":

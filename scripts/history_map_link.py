@@ -19,6 +19,7 @@ MAX_ADMIN_LENGTH = 64
 MAX_PLACE_LENGTH = 64
 ADMIN_PATTERN = re.compile(r"^[\w\s\-\u4e00-\u9fff·'’().（）/、]+$", re.UNICODE)
 STATUS_RESOLVED = "resolved"
+STATUS_OVERVIEW = "overview"
 STATUS_NEEDS_ADMIN = "needs_admin"
 STATUS_NOT_FOUND = "not_found"
 STATUS_PERIOD_MISMATCH = "period_mismatch"
@@ -119,12 +120,24 @@ ADMIN_SUFFIXES = (
     "府",
 )
 
+ADMIN_MAP_SUBSTITUTIONS: Sequence[Mapping[str, Any]] = (
+    {
+        "admin": "淮南路",
+        "dynasty": "宋",
+        "year_ranges": ((997, 1071), (1078, 1084), (1086, 1126)),
+        "map_admin": "淮南东路",
+        "reason": "目标年份为淮南东西路合并为淮南路的时期；左图右史官方索引未列“淮南路”标题，按官方淮南东路专题页交付，并在正文保留原图名说明合并期关系",
+    },
+)
+
+
 def resolve_history_map_link(
     place: str,
     year: int,
     admin: Optional[str],
     dynasty: Optional[str] = None,
     index_path: Path = DEFAULT_INDEX_PATH,
+    allow_overview: bool = False,
 ) -> Dict[str, Any]:
     """Return a verified route for a same-period or transition-period map."""
 
@@ -137,12 +150,15 @@ def resolve_history_map_link(
             "year": checked_year,
             "dynasty": checked_dynasty,
             "admin": admin.strip() if admin else None,
+            "allow_overview": allow_overview,
         },
         "status": STATUS_NOT_FOUND,
         "url": None,
         "map_label": None,
         "period": None,
         "admin": admin.strip() if admin else None,
+        "matched_admin": None,
+        "coverage": None,
         "reason": "",
     }
 
@@ -189,28 +205,33 @@ def resolve_history_map_link(
         return result
 
     aliases = admin_aliases(checked_admin)
-    best_match: Optional[Tuple[int, Mapping[str, Any], Optional[str]]] = None
-    low_score_seen = False
-    for allowed_pages, transition_reason in page_sets:
-        scored: List[Tuple[int, Mapping[str, Any]]] = []
-        for entry in entries:
-            if entry.get("page") not in allowed_pages:
-                continue
-            score = score_entry(entry, aliases)
-            if score > 0:
-                scored.append((score, entry))
-
-        if not scored:
-            continue
-
-        scored.sort(key=lambda item: (item[0], -len(str(item[1].get("label") or ""))), reverse=True)
-        best_score, best = scored[0]
-        if best_score >= 70:
-            best_match = (best_score, best, transition_reason)
-            break
-        low_score_seen = True
+    best_match, low_score_seen = best_map_match(entries, page_sets, aliases)
 
     if not best_match:
+        substitute_match = best_substitute_map_match(entries, page_sets, checked_admin, checked_year, checked_dynasty)
+        if substitute_match:
+            _, best, transition_reason, substitute = substitute_match
+            result["status"] = STATUS_RESOLVED
+            result["url"] = str(best.get("url") or "")
+            result["map_label"] = str(best.get("label") or "")
+            result["period"] = str(best.get("period") or "")
+            result["matched_admin"] = str(substitute.get("map_admin") or "")
+            result["coverage"] = "admin_substitute"
+            result["reason"] = ((transition_reason + "；") if transition_reason else "") + str(substitute.get("reason") or "")
+            return result
+        if allow_overview:
+            overview_match = first_period_overview(entries, page_sets)
+            if overview_match is not None:
+                overview, transition_reason = overview_match
+                result["status"] = STATUS_OVERVIEW
+                result["url"] = str(overview.get("url") or "")
+                result["map_label"] = str(overview.get("label") or "")
+                result["period"] = str(overview.get("period") or "")
+                result["coverage"] = "period_overview"
+                result["reason"] = (
+                    (transition_reason + "；") if transition_reason else ""
+                ) + "未匹配到同代一级区划专题图，已回退到同一时代总图；正文必须标明这是时代总图，不得称作一级区划图"
+                return result
         result["status"] = STATUS_NOT_FOUND
         result["reason"] = (
             "候选地图与一级行政区匹配度不足，已按 fail-closed 处理"
@@ -224,6 +245,8 @@ def resolve_history_map_link(
     result["url"] = str(best.get("url") or "")
     result["map_label"] = str(best.get("label") or "")
     result["period"] = str(best.get("period") or "")
+    result["matched_admin"] = checked_admin
+    result["coverage"] = "admin"
     result["reason"] = transition_reason or "已匹配同一时代且一级行政区标签相符的左图右史页面"
     return result
 
@@ -308,6 +331,84 @@ def transition_map_pages(year: int, dynasty: Optional[str]) -> List[str]:
     return adjacent_pages
 
 
+def best_map_match(
+    entries: Sequence[Mapping[str, Any]],
+    page_sets: Sequence[Tuple[set[str], Optional[str]]],
+    aliases: Sequence[str],
+) -> Tuple[Optional[Tuple[int, Mapping[str, Any], Optional[str]]], bool]:
+    low_score_seen = False
+    for allowed_pages, transition_reason in page_sets:
+        scored: List[Tuple[int, Mapping[str, Any]]] = []
+        for entry in entries:
+            if entry.get("page") not in allowed_pages:
+                continue
+            score = score_entry(entry, aliases)
+            if score > 0:
+                scored.append((score, entry))
+
+        if not scored:
+            continue
+
+        scored.sort(key=lambda item: (item[0], -len(str(item[1].get("label") or ""))), reverse=True)
+        best_score, best = scored[0]
+        if best_score >= 70:
+            return (best_score, best, transition_reason), low_score_seen
+        low_score_seen = True
+    return None, low_score_seen
+
+
+def best_substitute_map_match(
+    entries: Sequence[Mapping[str, Any]],
+    page_sets: Sequence[Tuple[set[str], Optional[str]]],
+    admin: str,
+    year: int,
+    dynasty: Optional[str],
+) -> Optional[Tuple[int, Mapping[str, Any], Optional[str], Mapping[str, Any]]]:
+    for substitute in admin_map_substitutions(admin, year, dynasty):
+        match, _ = best_map_match(entries, page_sets, admin_aliases(str(substitute.get("map_admin") or "")))
+        if match:
+            score, entry, transition_reason = match
+            return score, entry, transition_reason, substitute
+    return None
+
+
+def admin_map_substitutions(admin: str, year: int, dynasty: Optional[str]) -> List[Mapping[str, Any]]:
+    admin_norm = normalize_text(admin)
+    dynasty_norm = normalize_text(dynasty or "")
+    matches: List[Mapping[str, Any]] = []
+    for substitute in ADMIN_MAP_SUBSTITUTIONS:
+        if normalize_text(str(substitute.get("admin") or "")) != admin_norm:
+            continue
+        substitute_dynasty = normalize_text(str(substitute.get("dynasty") or ""))
+        if dynasty_norm and substitute_dynasty and substitute_dynasty not in dynasty_norm and dynasty_norm not in substitute_dynasty:
+            continue
+        if not any(start <= year <= end for start, end in substitute.get("year_ranges", ())):
+            continue
+        matches.append(substitute)
+    return matches
+
+
+def first_period_overview(
+    entries: Sequence[Mapping[str, Any]],
+    page_sets: Sequence[Tuple[set[str], Optional[str]]],
+) -> Optional[Tuple[Mapping[str, Any], Optional[str]]]:
+    for allowed_pages, transition_reason in page_sets:
+        for entry in entries:
+            if entry.get("page") in allowed_pages and is_period_overview(entry):
+                return entry, transition_reason
+    return None
+
+
+def is_period_overview(entry: Mapping[str, Any]) -> bool:
+    label = str(entry.get("label") or "")
+    label_norm = normalize_text(label)
+    if "历史全图" in label or "全图" in label:
+        return True
+    if label_core(label) == "":
+        return True
+    return bool(re.search(r"(时期|朝).*(历史地图)$", label_norm)) and "附近" not in label_norm
+
+
 def admin_aliases(admin: str) -> List[str]:
     normalized = normalize_text(admin)
     aliases = {normalized}
@@ -335,9 +436,7 @@ def score_entry(entry: Mapping[str, Any], aliases: Sequence[str]) -> int:
             continue
         if core == alias:
             best = max(best, 120 + len(alias))
-        elif core.startswith(alias) and len(core) > len(alias):
-            best = max(best, 80 + len(alias))
-        elif alias in label_norm:
+        elif has_admin_suffix(alias) and alias in label_norm:
             best = max(best, 70 + len(alias))
     return best
 
@@ -368,9 +467,15 @@ def normalize_text(text: str) -> str:
     return re.sub(r"[\s,，、.。:：;；()（）《》〈〉\[\]【】\-_/]+", "", text.strip())
 
 
+def has_admin_suffix(text: str) -> bool:
+    return any(text.endswith(normalize_text(suffix)) for suffix in ADMIN_SUFFIXES)
+
+
 def format_text(result: Mapping[str, Any]) -> str:
     if result.get("status") == STATUS_RESOLVED:
         return f"{result['map_label']}: {result['url']}"
+    if result.get("status") == STATUS_OVERVIEW:
+        return f"{result['map_label']}（时代总图）: {result['url']}"
     return f"{result.get('status')}: {result.get('reason')}"
 
 
@@ -381,11 +486,19 @@ def main() -> int:
     parser.add_argument("--admin", help="从辞典/原文确认的同时代一级行政区或前朝图标签，如 京畿道、河南诸郡")
     parser.add_argument("--dynasty", help="可选朝代提示，如 唐")
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX_PATH, help="左图右史索引 JSON")
+    parser.add_argument("--allow-overview", action="store_true", help="已核实 admin 但没有专题图时，允许回退到同代总图")
     parser.add_argument("--json", action="store_true", help="输出 JSON")
     args = parser.parse_args()
 
     try:
-        result = resolve_history_map_link(args.place, args.year, args.admin, args.dynasty, args.index)
+        result = resolve_history_map_link(
+            args.place,
+            args.year,
+            args.admin,
+            args.dynasty,
+            args.index,
+            allow_overview=args.allow_overview,
+        )
     except HistoryMapLinkError as exc:
         result = {
             "status": STATUS_INVALID,
@@ -393,6 +506,8 @@ def main() -> int:
             "map_label": None,
             "period": None,
             "admin": args.admin,
+            "matched_admin": None,
+            "coverage": None,
             "reason": str(exc),
         }
 
@@ -400,7 +515,7 @@ def main() -> int:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
         print(format_text(result))
-    return 0 if result.get("status") == STATUS_RESOLVED else 1
+    return 0 if result.get("status") in {STATUS_RESOLVED, STATUS_OVERVIEW} else 1
 
 
 if __name__ == "__main__":

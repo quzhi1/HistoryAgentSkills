@@ -139,6 +139,11 @@ def test_workflow_guardrails() -> bool:
             "地点与地图核验",
             "place_admin_resolver.py",
             "反查历史地名",
+            "--allow-overview",
+            "overview",
+            "admin_substitute",
+            "合并/分置期",
+            "时代总图",
             "识典原文链接交付",
             "正文出处行已交付",
             "正文首次出现或“地点与地图核验”已交付",
@@ -156,6 +161,11 @@ def test_workflow_guardrails() -> bool:
             "不附左图右史链接",
             "place_admin_resolver.py",
             "反查历史地名",
+            "--allow-overview",
+            "overview",
+            "admin_substitute",
+            "合并/分置期",
+            "时代总图",
             "必说明被引史料",
             "每部被引用史料都要有简介",
             "单一真理源",
@@ -186,6 +196,10 @@ def test_workflow_guardrails() -> bool:
             "needs_admin",
             "错误示例10",
             "反查历史地名",
+            "overview",
+            "admin_substitute",
+            "合并/分置期",
+            "时代总图",
             "只给史料出处",
         ],
         ".claude/commands/history.md": [
@@ -527,6 +541,45 @@ class FakeTgazPlaceClient:
                     source_note="明属山东布政司，治今测试县。",
                 )
             ],
+            "黄州": [
+                _tgaz_payload(
+                    "hvd_13",
+                    "黄州",
+                    758,
+                    1276,
+                    20,
+                    20,
+                    present_location="今别处",
+                    source_note="唐乾元元年改齐安郡置，属淮南道。",
+                ),
+                _tgaz_payload(
+                    "hvd_14",
+                    "黄州",
+                    885,
+                    1276,
+                    2,
+                    2,
+                    present_location="今测试县",
+                    source_note=(
+                        "北宋太平兴国元年(976年)属淮南西路。至道三年(997年)属淮南路。"
+                        "熙宁五年(1072年)属淮南西路。元丰元年(1078年)属淮南路，"
+                        "八年(1085年)属淮南西路。治今测试县。"
+                    ),
+                ),
+            ],
+            "州治": [
+                _tgaz_payload(
+                    "hvd_15",
+                    "州治",
+                    700,
+                    800,
+                    2,
+                    2,
+                    parent="测试州",
+                    present_location="今测试县",
+                    source_note="唐属测试州，治今测试县。",
+                )
+            ],
         }
         self.detail_payloads = {
             "hvd_1": _tgaz_payload("hvd_1", "古城", 700, 800, 2, 2),
@@ -793,6 +846,36 @@ def test_history_map_link() -> bool:
         print(f"✗ 山西/陕西区分失败: 山西={shanxi} 陕西={shaanxi}")
         ok = False
 
+    huainan = resolve_history_map_link("黄州", 1080, "淮南路", dynasty="宋")
+    if (
+        huainan["status"] == "resolved"
+        and huainan["coverage"] == "admin_substitute"
+        and huainan["matched_admin"] == "淮南东路"
+        and huainan["url"].endswith("sec=sec08_huainan-dong")
+    ):
+        print("✓ 宋代淮南路合并期可显式匹配左图右史淮南东路专题页")
+    else:
+        print(f"✗ 淮南路合并期专题页匹配失败: {huainan}")
+        ok = False
+
+    huainan_west = resolve_history_map_link("黄州", 1080, "淮南西路", dynasty="宋")
+    if huainan_west["status"] == "not_found":
+        print("✓ 淮南西路不会因共享词干误匹配到淮南东路")
+    else:
+        print(f"✗ 淮南西路误匹配地图: {huainan_west}")
+        ok = False
+
+    guangnan_west = resolve_history_map_link("桂州", 1080, "广南西路", dynasty="宋", allow_overview=True)
+    if (
+        guangnan_west["status"] == "overview"
+        and guangnan_west["coverage"] == "period_overview"
+        and guangnan_west["url"].endswith("sec=sec01_bei-song")
+    ):
+        print("✓ 已核实 admin 但缺专题图时仍可回退到同代时代总图")
+    else:
+        print(f"✗ 总图 fallback 失败: {guangnan_west}")
+        ok = False
+
     return ok
 
 
@@ -922,6 +1005,47 @@ def test_place_admin_resolver() -> bool:
         print("✓ 现代地点线索不匹配时拒绝继续推导地图")
     else:
         print(f"✗ 现代地点不匹配仍继续推导: {mismatch}")
+        ok = False
+
+    huangzhou = resolve_place_admin(
+        "黄州",
+        1080,
+        dynasty="宋",
+        modern_hint="测试县",
+        candidates=["黄州"],
+        tgaz_client=client,
+        boundary_resolver=boundary_resolver,
+    )
+    huangzhou_admins = {item["admin"]: item.get("map_status") for item in huangzhou.get("admin_candidates", [])}
+    if (
+        huangzhou["status"] == "resolved"
+        and huangzhou["historical_place"]["name"] == "黄州"
+        and huangzhou.get("modern_match", {}).get("district") == "测试县"
+        and huangzhou.get("admin_candidates", [{}])[0].get("admin") == "淮南路"
+        and "淮南路" in huangzhou_admins
+        and huangzhou_admins["淮南路"] == "resolved"
+        and huangzhou["map_link"]["coverage"] == "admin_substitute"
+        and huangzhou["map_link"]["url"].endswith("sec=sec08_huainan-dong")
+    ):
+        print("✓ TGAZ 同名歧义候选可用现代线索筛出，并验证淮南路合并期专题页")
+    else:
+        print(f"✗ 黄州歧义候选反查处理失败: {huangzhou}")
+        ok = False
+
+    local_prefecture = resolve_place_admin(
+        "州治",
+        750,
+        dynasty="唐",
+        modern_hint="测试县",
+        candidates=["州治"],
+        tgaz_client=client,
+        boundary_resolver=boundary_resolver,
+    )
+    local_statuses = {item["admin"]: item.get("map_status") for item in local_prefecture.get("admin_candidates", [])}
+    if local_prefecture["status"] == "needs_admin" and local_statuses.get("测试州") == "not_found":
+        print("✓ 自动反查不会把州级候选回退成同代总图")
+    else:
+        print(f"✗ 州级候选不应触发总图 fallback: {local_prefecture}")
         ok = False
 
     return ok
