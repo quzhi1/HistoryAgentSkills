@@ -219,7 +219,7 @@ def main():
     )
     
     subparsers = parser.add_subparsers(dest='command', help='查询类型')
-    
+
     # 诗词查询
     poetry_parser = subparsers.add_parser('poetry', help='查询诗词')
     poetry_parser.add_argument('--keyword', help='关键词')
@@ -227,24 +227,29 @@ def main():
     poetry_parser.add_argument('--dynasty', help='朝代')
     poetry_parser.add_argument('--title', help='题目')
     poetry_parser.add_argument('--limit', type=int, default=10, help='返回结果数量限制')
-    
+    poetry_parser.add_argument('--json', action='store_true', help='只输出原始 JSON')
+
     # 古籍查询
     book_parser = subparsers.add_parser('book', help='查询古籍（书目与命中数）')
     book_parser.add_argument('--keyword', required=True, help='关键词')
     book_parser.add_argument('--limit', type=int, default=10, help='返回结果数量限制')
-    
+    book_parser.add_argument('--json', action='store_true', help='只输出原始 JSON')
+
     # 古籍原文片段检索（带上下文的命中片段，用于补充时间地点人物起因经过结果）
     find_parser = subparsers.add_parser('find', help='检索古籍原文片段（Book/Find，返回 PreviousText/MatchedText/LaterText）')
     find_parser.add_argument('--keyword', required=True, help='关键词或组合，如 崔浩、暴扬国恶、国史 刊石')
     find_parser.add_argument('--page', type=int, default=0, help='页码，默认 0')
-    
+    find_parser.add_argument('--json', action='store_true', help='只输出原始 JSON')
+
     # 人物查询
     people_parser = subparsers.add_parser('people', help='查询人物')
     people_parser.add_argument('--name', required=True, help='人名')
-    
+    people_parser.add_argument('--json', action='store_true', help='只输出原始 JSON')
+
     # 事件查询
     event_parser = subparsers.add_parser('event', help='查询事件')
     event_parser.add_argument('--keyword', required=True, help='关键词')
+    event_parser.add_argument('--json', action='store_true', help='只输出原始 JSON')
     
     args = parser.parse_args()
     
@@ -252,8 +257,10 @@ def main():
         parser.print_help()
         sys.exit(1)
     
-    print(f"\n正在查询古籍文献知识图谱API...")
-    
+    json_only = args.json
+    if not json_only:
+        print(f"\n正在查询古籍文献知识图谱API...")
+
     try:
         if args.command == 'poetry':
             result = search_poetry(
@@ -263,26 +270,44 @@ def main():
                 title=args.title,
                 limit=args.limit
             )
-            format_poetry_result(result)
-            
+            if json_only:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                format_poetry_result(result)
+
         elif args.command == 'book':
             result = search_books(args.keyword, args.limit)
-            format_book_result(result)
-            
+            if json_only:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                format_book_result(result)
+
         elif args.command == 'find':
             result = find_book_passages(args.keyword, args.page)
-            format_book_result(result)
-            
+            if json_only:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                format_book_result(result)
+
         elif args.command == 'people':
             result = search_people(args.name)
-            format_people_result(result)
-            
+            if json_only:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                format_people_result(result)
+
         elif args.command == 'event':
             result = search_event(args.keyword)
-            format_event_result(result)
-            
+            if json_only:
+                print(json.dumps(result, ensure_ascii=False, indent=2))
+            else:
+                format_event_result(result)
+
     except Exception as e:
-        print(f"\n❌ 发生错误: {e}")
+        if json_only:
+            print(json.dumps({"error": str(e)}, ensure_ascii=False), file=sys.stderr)
+        else:
+            print(f"\n❌ 发生错误: {e}")
         sys.exit(1)
 
 if __name__ == "__main__":
