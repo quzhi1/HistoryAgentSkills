@@ -159,6 +159,7 @@ def resolve_history_map_link(
     dynasty: Optional[str] = None,
     index_path: Path = DEFAULT_INDEX_PATH,
     allow_overview: bool = False,
+    period_overview: bool = False,
 ) -> Dict[str, Any]:
     """Return a verified route for a same-period or transition-period map."""
 
@@ -172,6 +173,7 @@ def resolve_history_map_link(
             "dynasty": checked_dynasty,
             "admin": admin.strip() if admin else None,
             "allow_overview": allow_overview,
+            "period_overview": period_overview,
         },
         "status": STATUS_NOT_FOUND,
         "url": None,
@@ -187,6 +189,32 @@ def resolve_history_map_link(
         result["status"] = STATUS_OUT_OF_RANGE
         result["reason"] = f"左图右史索引只用于 {MIN_YEAR} 至 {MAX_YEAR} 年范围内的中国历史地图"
         return result
+
+    index = load_index(index_path)
+    entries = list(index.get("entries") or [])
+    page_sets, failure_status, failure_reason = build_period_page_sets(checked_year, checked_dynasty)
+    if not page_sets:
+        result["status"] = failure_status
+        result["reason"] = failure_reason
+        return result
+
+    if period_overview:
+        overview_match = first_period_overview(entries, page_sets, checked_year)
+        if overview_match is not None:
+            overview, transition_reason = overview_match
+            result["status"] = STATUS_OVERVIEW
+            result["url"] = str(overview.get("url") or "")
+            result["map_label"] = str(overview.get("label") or "")
+            result["period"] = str(overview.get("period") or "")
+            result["coverage"] = "period_overview"
+            result["reason"] = (
+                (transition_reason + "；") if transition_reason else ""
+            ) + "朝代/时期整体问题的左图右史时代总图；正文必须标明这是朝代/时期总图，不得当作具体地点或一级区划专题图"
+            return result
+        result["status"] = STATUS_NOT_FOUND
+        result["reason"] = "未找到该朝代/时期对应的左图右史时代总图"
+        return result
+
     if not admin or not admin.strip():
         result["status"] = STATUS_NEEDS_ADMIN
         result["reason"] = "必须先根据辞典/原文确认同时代一级行政区或过渡期前朝区划，不能用现代省份反推"
@@ -195,35 +223,6 @@ def resolve_history_map_link(
     checked_admin = validate_text(admin, "一级行政区", MAX_ADMIN_LENGTH)
     result["query"]["admin"] = checked_admin
     result["admin"] = checked_admin
-
-    index = load_index(index_path)
-    entries = list(index.get("entries") or [])
-    year_pages = set(pages_for_year(checked_year))
-    dynasty_pages = set(pages_for_dynasty(checked_dynasty)) if checked_dynasty else set()
-    page_sets: List[Tuple[set[str], Optional[str]]] = []
-    transition_pages = set(transition_map_pages(checked_year, checked_dynasty))
-    transition_reason = "公元年份接近左图右史时代页边界；已按相邻时代过渡期规则匹配左图右史页面"
-    if dynasty_pages:
-        overlap = year_pages & dynasty_pages
-        if not overlap:
-            if not transition_pages:
-                result["status"] = STATUS_PERIOD_MISMATCH
-                result["reason"] = "公元年份与朝代提示无法落在同一左图右史时代页"
-                return result
-            page_sets.append((transition_pages, transition_reason))
-        else:
-            page_sets.append((overlap, None))
-            if transition_pages and transition_pages != overlap:
-                page_sets.append((transition_pages, transition_reason))
-    else:
-        page_sets.append((year_pages, None))
-        if transition_pages:
-            page_sets.append((transition_pages, transition_reason))
-
-    if not any(pages for pages, _ in page_sets):
-        result["status"] = STATUS_NOT_FOUND
-        result["reason"] = "没有与该年份对应的左图右史时代页"
-        return result
 
     aliases = admin_aliases(checked_admin)
     best_match, low_score_seen = best_map_match(entries, page_sets, aliases)
@@ -241,7 +240,7 @@ def resolve_history_map_link(
             result["reason"] = ((transition_reason + "；") if transition_reason else "") + str(substitute.get("reason") or "")
             return result
         if allow_overview:
-            overview_match = first_period_overview(entries, page_sets)
+            overview_match = first_period_overview(entries, page_sets, checked_year)
             if overview_match is not None:
                 overview, transition_reason = overview_match
                 result["status"] = STATUS_OVERVIEW
@@ -270,6 +269,36 @@ def resolve_history_map_link(
     result["coverage"] = "admin"
     result["reason"] = transition_reason or "已匹配同一时代且一级行政区标签相符的左图右史页面"
     return result
+
+
+def build_period_page_sets(
+    checked_year: int,
+    checked_dynasty: Optional[str],
+) -> Tuple[List[Tuple[set[str], Optional[str]]], str, str]:
+    year_pages = set(pages_for_year(checked_year))
+    dynasty_pages = set(pages_for_dynasty(checked_dynasty)) if checked_dynasty else set()
+    page_sets: List[Tuple[set[str], Optional[str]]] = []
+    transition_pages = set(transition_map_pages(checked_year, checked_dynasty))
+    transition_reason = "公元年份接近左图右史时代页边界；已按相邻时代过渡期规则匹配左图右史页面"
+    if dynasty_pages:
+        overlap = year_pages & dynasty_pages
+        if not overlap:
+            if not transition_pages:
+                return [], STATUS_PERIOD_MISMATCH, "公元年份与朝代提示无法落在同一左图右史时代页"
+            page_sets.append((transition_pages, transition_reason))
+        else:
+            page_sets.append((overlap, None))
+            if transition_pages and transition_pages != overlap:
+                page_sets.append((transition_pages, transition_reason))
+    else:
+        page_sets.append((year_pages, None))
+        if transition_pages:
+            page_sets.append((transition_pages, transition_reason))
+
+    if not any(pages for pages, _ in page_sets):
+        return [], STATUS_NOT_FOUND, "没有与该年份对应的左图右史时代页"
+
+    return page_sets, STATUS_RESOLVED, ""
 
 
 def validate_text(value: str, label: str, max_length: int) -> str:
@@ -412,12 +441,29 @@ def admin_map_substitutions(admin: str, year: int, dynasty: Optional[str]) -> Li
 def first_period_overview(
     entries: Sequence[Mapping[str, Any]],
     page_sets: Sequence[Tuple[set[str], Optional[str]]],
+    year: Optional[int] = None,
 ) -> Optional[Tuple[Mapping[str, Any], Optional[str]]]:
     for allowed_pages, transition_reason in page_sets:
-        for entry in entries:
+        candidates: List[Tuple[int, int, Mapping[str, Any]]] = []
+        for order, entry in enumerate(entries):
             if entry.get("page") in allowed_pages and is_period_overview(entry):
-                return entry, transition_reason
+                candidates.append((overview_year_distance(entry, year), order, entry))
+        if candidates:
+            _, _, entry = min(candidates, key=lambda item: (item[0], item[1]))
+            return entry, transition_reason
     return None
+
+
+def overview_year_distance(entry: Mapping[str, Any], target_year: Optional[int]) -> int:
+    if target_year is None:
+        return 1_000_000
+    label = str(entry.get("label") or "")
+    years = [int(match) for match in re.findall(r"公元\s*(-?\d{1,4})", label)]
+    if not years:
+        years = [int(match) for match in re.findall(r"(?<!\d)(-?\d{3,4})(?=年)", label)]
+    if not years:
+        return 1_000_000
+    return min(abs(year - target_year) for year in years)
 
 
 def is_period_overview(entry: Mapping[str, Any]) -> bool:
@@ -508,6 +554,7 @@ def main() -> int:
     parser.add_argument("--dynasty", help="可选朝代提示，如 唐")
     parser.add_argument("--index", type=Path, default=DEFAULT_INDEX_PATH, help="左图右史索引 JSON")
     parser.add_argument("--allow-overview", action="store_true", help="已核实 admin 但没有专题图时，允许回退到同代总图")
+    parser.add_argument("--period-overview", action="store_true", help="朝代/时期整体问题直接返回时代总图；不得用于具体地点定位")
     parser.add_argument("--json", action="store_true", help="输出 JSON")
     args = parser.parse_args()
 
@@ -519,6 +566,7 @@ def main() -> int:
             args.dynasty,
             args.index,
             allow_overview=args.allow_overview,
+            period_overview=args.period_overview,
         )
     except HistoryMapLinkError as exc:
         result = {

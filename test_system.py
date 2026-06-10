@@ -132,6 +132,10 @@ def test_workflow_guardrails() -> bool:
     requirements = {
         "SKILL.md": [
             "单一真理源",
+            "译文只翻译原文",
+            "每个评价或比较结论",
+            "朝代/时期总图",
+            "--period-overview",
             "多人物/列表型答案",
             "不传 `--admin`",
             "needs_admin",
@@ -152,6 +156,10 @@ def test_workflow_guardrails() -> bool:
             "每部被引用史料",
         ],
         "README.md": [
+            "译文只翻译原文",
+            "每个评价或比较结论",
+            "朝代/时期总图",
+            "--period-overview",
             "多人物/列表型回答",
             "不传 `--admin`",
             "needs_admin",
@@ -187,6 +195,9 @@ def test_workflow_guardrails() -> bool:
             "test_system.py",
         ],
         "COMMON_MISTAKES.md": [
+            "译文里混入分析",
+            "无证据比较结论",
+            "朝代/时期总图",
             "错误示例7",
             "错误示例8",
             "脚本跑了",
@@ -874,6 +885,17 @@ def test_history_map_link() -> bool:
         print("✓ 已核实 admin 但缺专题图时仍可回退到同代时代总图")
     else:
         print(f"✗ 总图 fallback 失败: {guangnan_west}")
+        ok = False
+
+    tang_overview = resolve_history_map_link("唐朝", 750, None, dynasty="唐", period_overview=True)
+    if (
+        tang_overview["status"] == "overview"
+        and tang_overview["coverage"] == "period_overview"
+        and tang_overview["url"].endswith("sec=sec02_tang741")
+    ):
+        print("✓ 朝代/时期整体问题可显式返回左图右史总图")
+    else:
+        print(f"✗ 朝代/时期总图失败: {tang_overview}")
         ok = False
 
     return ok
