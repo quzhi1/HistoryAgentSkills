@@ -83,13 +83,10 @@ def test_files() -> bool:
         "scripts/place_admin_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
-        "scripts/source_book_index.py",
         "scripts/update_history_map_index.py",
-        "scripts/update_source_book_index.py",
         "scripts/run_in_venv.py",
         "scripts/venv_utils.py",
         "data/history_map_index.json",
-        "data/source_book_index.sqlite",
         "setup_venv.py",
         "SKILL.md",
         "AGENTS.md",
@@ -113,7 +110,10 @@ def test_files() -> bool:
 
     removed_paths = [
         "scripts/fetch_dynasty_data.py",
+        "scripts/source_book_index.py",
+        "scripts/update_source_book_index.py",
         "data/dynasty",
+        "data/source_book_index.sqlite",
     ]
     for file in removed_paths:
         path = ROOT / file
@@ -148,8 +148,9 @@ def test_workflow_guardrails() -> bool:
             "admin_substitute",
             "合并/分置期",
             "时代总图",
-            "识典原文链接交付",
-            "正文出处行已交付",
+            "识典检索链接交付",
+            "识典检索 URL",
+            "正文出处行已附 [识典检索](url)：是",
             "正文首次出现或“地点与地图核验”已交付",
             "清单 C：被引史料说明",
             'venv/bin/mdict -q "史料书名"',
@@ -165,7 +166,8 @@ def test_workflow_guardrails() -> bool:
             "needs_admin",
             "静默省略",
             "逐条交付",
-            "二次验证未通过",
+            "识典检索链接",
+            "不要手写或猜测识典书页链接",
             "不附左图右史链接",
             "place_admin_resolver.py",
             "反查历史地名",
@@ -320,9 +322,7 @@ def test_scripts_compile() -> bool:
         "scripts/place_admin_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
-        "scripts/source_book_index.py",
         "scripts/update_history_map_index.py",
-        "scripts/update_source_book_index.py",
         "scripts/run_in_venv.py",
         "scripts/venv_utils.py",
         "setup_venv.py",
@@ -1073,263 +1073,94 @@ def test_place_admin_resolver() -> bool:
     return ok
 
 
-def test_source_book_index() -> bool:
-    """Test source book index parsing and lookup offline."""
-    print("\n测试11: 识典/cnkgraph 书目索引...")
-    from tempfile import TemporaryDirectory
-
-    from source_book_index import find_shidian_book_by_url, load_source_book_index, lookup_title_entries, lookup_title_variants
-    from update_source_book_index import build_crosswalk, normalize_cnkgraph_book, normalize_existing_sources, parse_shidian_sitemap, write_index
-
-    fixture_html = """
-    <html><body>
-      <a href="/sitemap-book-1">1</a>
-      <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fwww.shidianguji.com%2Fzh%2Fbook%2FNA0001">
-        毛詩 全文原文及譯文
-      </a>
-      <a href="/ens/book/QDTW0001">
-        全唐文（欽定全唐文）全文原文
-      </a>
-      <a href="https://security.zijieapi.com/api/link?targetUrl=https%3A%2F%2Fevil.example%2Fbook%2Fbad">
-        不应保存
-      </a>
-    </body></html>
-    """
-    ok = True
-    parsed = parse_shidian_sitemap(fixture_html, sitemap_path="/sitemap-book")
-    if parsed["sitemap_paths"] == ["/sitemap-book-1"] and len(parsed["books"]) == 2:
-        book = next((item for item in parsed["books"] if item["title"] == "毛詩"), None)
-        qdtw_book = next((item for item in parsed["books"] if item["title"] == "全唐文（欽定全唐文）"), None)
-        if (
-            book
-            and qdtw_book
-            and book["url"] == "https://www.shidianguji.com/book/NA0001"
-            and qdtw_book["url"] == "https://www.shidianguji.com/book/QDTW0001"
-        ):
-            print("✓ 识典 sitemap 安全跳转可还原为官方书页")
-        else:
-            print(f"✗ 识典书页解析字段错误: books={parsed['books']}")
-            ok = False
-    else:
-        print(f"✗ 识典 sitemap 解析失败: {parsed}")
-        ok = False
-
-    cnkgraph_book = normalize_cnkgraph_book(
-        {"Id": 7337, "Name": "毛诗", "Author": "毛亨传", "Dynasty": "汉"},
-        "经部",
-        "诗类",
-    )
-    if cnkgraph_book["api_url"] == "https://open.cnkgraph.com/api/Book/7337" and cnkgraph_book["title"] == "毛诗":
-        print("✓ cnkgraph 分组书目归一化为可验证 API 链接")
-    else:
-        print(f"✗ cnkgraph 书目归一化失败: {cnkgraph_book}")
-        ok = False
-
-    sources = normalize_existing_sources(
-        {
-            "shidian": {"books": parsed["books"]},
-            "cnkgraph": {"books": [cnkgraph_book]},
-        }
-    )
-    crosswalk = build_crosswalk(sources)
-    sample_index = {
-        "crosswalk": crosswalk,
-        "sources": {
-            "shidian": sources["shidian"],
-            "cnkgraph": sources["cnkgraph"],
-        }
-    }
-    found = find_shidian_book_by_url("https://www.shidianguji.com/zh/book/NA0001/chapter/abc", index=sample_index)
-    ens_found = find_shidian_book_by_url("https://www.shidianguji.com/ens/book/NA0001/chapter/abc", index=sample_index)
-    if found and ens_found and found["title"] == "毛詩" and ens_found["title"] == "毛詩":
-        print("✓ 可从识典章节 URL 反查本地书目索引")
-    else:
-        print(f"✗ 章节 URL 反查书目失败: found={found}, ens_found={ens_found}")
-        ok = False
-
-    crosswalk_entries = crosswalk["entries"]
-    if (
-        crosswalk["entry_count"] == 1
-        and crosswalk_entries[0]["normalized_title"] == "毛诗"
-        and crosswalk_entries[0]["shidian"][0]["url"] == "https://www.shidianguji.com/book/NA0001"
-        and crosswalk_entries[0]["cnkgraph"][0]["api_url"] == "https://open.cnkgraph.com/api/Book/7337"
-    ):
-        print("✓ crosswalk 可显式关联识典书页和 cnkgraph 书目")
-    else:
-        print(f"✗ crosswalk 生成失败: {crosswalk}")
-        ok = False
-
-    variants = lookup_title_variants("毛诗", index=sample_index)
-    entries = lookup_title_entries("毛诗", index=sample_index)
-    if "毛诗" in variants and entries and {entry.get("title") for entry in entries} == {"毛詩", "毛诗"}:
-        print("✓ 书名优先通过 crosswalk 查到两边来源链接")
-    else:
-        print(f"✗ 本地书名索引查找失败: variants={variants}, entries={entries}")
-        ok = False
-
-    qdtw_entries = lookup_title_entries("钦定全唐文", index=sample_index, sources=("shidian",))
-    if qdtw_entries and qdtw_entries[0]["title"] == "全唐文（欽定全唐文）":
-        print("✓ 较长别名可匹配识典括注题名")
-    else:
-        print(f"✗ 识典括注题名匹配失败: {qdtw_entries}")
-        ok = False
-
-    with TemporaryDirectory() as tmpdir:
-        sqlite_path = Path(tmpdir) / "source_book_index.sqlite"
-        write_index(
-            {"schema_version": 1, "generated_at": "fixture", "sources": sources, "crosswalk": crosswalk},
-            sqlite_path,
-            pretty=False,
-        )
-        sqlite_index = load_source_book_index(sqlite_path)
-        sqlite_entries = lookup_title_entries("毛诗", index=sqlite_index)
-        sqlite_qdtw_entries = lookup_title_entries("钦定全唐文", index=sqlite_index, sources=("shidian",))
-        sqlite_found = find_shidian_book_by_url(
-            "https://www.shidianguji.com/zh/book/NA0001/chapter/abc",
-            index=sqlite_index,
-        )
-        sqlite_ens_found = find_shidian_book_by_url(
-            "https://www.shidianguji.com/ens/book/NA0001/chapter/abc",
-            index=sqlite_index,
-        )
-        if (
-            sqlite_found
-            and sqlite_ens_found
-            and sqlite_found["url"] == "https://www.shidianguji.com/book/NA0001"
-            and sqlite_ens_found["url"] == "https://www.shidianguji.com/book/NA0001"
-            and sqlite_entries
-            and sqlite_qdtw_entries
-            and sqlite_qdtw_entries[0]["url"] == "https://www.shidianguji.com/book/QDTW0001"
-        ):
-            print("✓ SQLite 书目索引可点查书名与识典章节 URL")
-        else:
-            print(
-                f"✗ SQLite 书目索引查询失败: found={sqlite_found}, "
-                f"ens_found={sqlite_ens_found}, entries={sqlite_entries}, qdtw_entries={sqlite_qdtw_entries}"
-            )
-            ok = False
-
-    return ok
-
-
 def test_shidian_link() -> bool:
-    """Test Shidian Guji result parsing and verification offline."""
-    print("\n测试12: 识典古籍原文链接验证...")
-    from shidian_link import ShidianLinkError, find_shidian_link, source_lookup_titles
+    """Test Shidian Guji search URL generation offline."""
+    print("\n测试11: 识典古籍检索链接生成...")
+    from shidian_link import build_search_url
 
-    fixture_html = """
-    <html><body>
-      <a href="/zh/book/WEI001/chapter/cuihao">
-        崔浩字伯渊清河人也 白马公玄伯之长子 《魏书》 卷三五 崔浩传
-      </a>
-      <a href="/zh/book/SONG001/chapter/other">
-        王安石临川人 《宋史》 卷三二七 王安石传
-      </a>
-    </body></html>
-    """
     ok = True
 
-    qdtw_titles = source_lookup_titles("钦定全唐文")
-    if "全唐文" in qdtw_titles:
-        print("✓ 识典链接脚本知道《钦定全唐文》与《全唐文》可互查")
+    simple_url = build_search_url("崔浩")
+    if simple_url == "https://www.shidianguji.com/search/%E5%B4%94%E6%B5%A9":
+        print("✓ 识典检索 URL 会按关键词编码")
     else:
-        print(f"✗ 全唐文异名未进入链接脚本查找集合: {qdtw_titles}")
+        print(f"✗ 识典关键词编码失败: {simple_url}")
         ok = False
 
-    resolved = find_shidian_link(
-        "崔浩字伯渊清河人也",
-        "《魏书》卷三五《崔浩传》",
-        keyword="崔浩",
-        html=fixture_html,
+    quote_result = subprocess.run(
+        [
+            str(venv_executable(ROOT, "python")),
+            "scripts/shidian_link.py",
+            "--source",
+            "《魏书》卷三五《崔浩传》",
+            "--quote",
+            "崔浩字伯渊清河人也",
+            "--keyword",
+            "崔浩字伯渊清河人也",
+            "--json",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=5,
     )
-    if resolved["status"] == "resolved" and resolved["url"] == "https://www.shidianguji.com/zh/book/WEI001/chapter/cuihao":
-        print("✓ HTML fixture 中的引文/出处匹配到精确章节链接")
+    if quote_result.returncode == 0:
+        payload = json.loads(quote_result.stdout)
+        if (
+            payload["status"] == "search"
+            and payload["search_term"] == "崔浩字伯渊清河人也"
+            and payload["url"] == build_search_url("崔浩字伯渊清河人也")
+        ):
+            print("✓ CLI JSON 输出交付 search 状态、检索词和 URL")
+        else:
+            print(f"✗ CLI JSON 输出字段错误: {payload}")
+            ok = False
     else:
-        print(f"✗ 识典精确链接匹配失败: {resolved}")
+        print(f"✗ 识典 CLI 调用失败: {quote_result.stderr}")
         ok = False
 
-    not_found = find_shidian_link(
-        "魏主大怒诏浩诛之",
-        "《魏书》卷三五《崔浩传》",
-        keyword="崔浩",
-        html=fixture_html,
+    fallback_result = subprocess.run(
+        [
+            str(venv_executable(ROOT, "python")),
+            "scripts/shidian_link.py",
+            "--source",
+            "《魏书》卷三五《崔浩传》",
+            "--quote",
+            "崔浩字伯渊清河人也",
+            "--json",
+        ],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=5,
     )
-    if not_found["status"] == "not_found" and not_found["url"] is None and not_found["search_url"].endswith("/%E5%B4%94%E6%B5%A9"):
-        print("✓ 未验证时只给检索页 fallback，不标为原文链接")
+    if fallback_result.returncode == 0:
+        payload = json.loads(fallback_result.stdout)
+        if payload["search_term"] == "崔浩字伯渊清河人也":
+            print("✓ 未传 keyword 时回退使用 quote")
+        else:
+            print(f"✗ quote fallback 错误: {payload}")
+            ok = False
     else:
-        print(f"✗ 识典未验证 fallback 失败: {not_found}")
+        print(f"✗ quote fallback 调用失败: {fallback_result.stderr}")
         ok = False
 
-    indirect_quote_html = """
-    <html><body>
-      <a href="/zh/book/ZHENGYANG/chapter/fanli">
-        史货殖传：范蠡既雪会稽之耻，乃乘扁舟浮于江湖。 《正杨》 正杨卷二
-      </a>
-    </body></html>
-    """
-    indirect = find_shidian_link(
-        "乃乘扁舟浮于江湖",
-        "《史记》卷一百二十九《货殖列传》",
-        keyword="浮于江湖",
-        html=indirect_quote_html,
+    error_result = subprocess.run(
+        [str(venv_executable(ROOT, "python")), "scripts/shidian_link.py", "--json"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=5,
     )
-    if indirect["status"] == "not_found" and indirect["url"] is None:
-        print("✓ 后代类书转引不会冒充原书识典链接")
+    if error_result.returncode != 0:
+        payload = json.loads(error_result.stdout)
+        if payload["status"] == "error" and payload["reason"] == "no search term provided":
+            print("✓ 无 source/quote/keyword 时 fail closed")
+        else:
+            print(f"✗ 无检索词错误输出不符合预期: {payload}")
+            ok = False
     else:
-        print(f"✗ 转引误判为原文链接: {indirect}")
-        ok = False
-
-    direct_shiji_html = """
-    <html><body>
-      <a href="/zh/book/SHIJI/chapter/huozhi">
-        乃乘扁舟，浮於江湖，變名易姓，適齊，爲鴟夷子皮。 《史記》 史記一百二十九
-      </a>
-    </body></html>
-    """
-    shiji = find_shidian_link(
-        "乃乘扁舟浮于江湖变名易姓",
-        "《史记》卷一百二十九《货殖列传》",
-        keyword="乘扁舟浮于江湖",
-        html=direct_shiji_html,
-    )
-    if shiji["status"] == "resolved" and shiji["url"] == "https://www.shidianguji.com/zh/book/SHIJI/chapter/huozhi":
-        print("✓ 原书名匹配时可验证正史章节链接")
-    else:
-        print(f"✗ 正史原书章节链接匹配失败: {shiji}")
-        ok = False
-
-    class FakeResponse:
-        def __init__(self, text: str, status_code: int = 200) -> None:
-            self.text = text
-            self.status_code = status_code
-
-        def raise_for_status(self) -> None:
-            if self.status_code >= 400:
-                raise requests.exceptions.HTTPError(str(self.status_code))
-
-    def fake_direct_get(url: str, **_: object) -> FakeResponse:
-        if url.endswith("/book/LS0016/chapter/LS0016_1"):
-            return FakeResponse("五月己未秦王大破窦建德之众于武牢擒建德河北悉平")
-        return FakeResponse("", 404)
-
-    direct_jiutangshu = find_shidian_link(
-        "秦王大破窦建德之众于武牢擒建德河北悉平",
-        "《旧唐书》卷一《高祖本纪》",
-        keyword="大破窦建德",
-        http_get=fake_direct_get,
-    )
-    if direct_jiutangshu["status"] == "resolved" and direct_jiutangshu["url"].endswith("/LS0016_1"):
-        print("✓ 可用本地书目索引直接校验识典原书章节")
-    else:
-        print(f"✗ 识典原书章节直接校验失败: {direct_jiutangshu}")
-        ok = False
-
-    try:
-        find_shidian_link("短引", "《魏书》卷三五《崔浩传》", keyword="x" * 65, html=fixture_html)
-    except ShidianLinkError:
-        print("✓ 过长关键词会被拒绝")
-    else:
-        print("✗ 过长关键词未被拒绝")
+        print("✗ 无检索词时没有失败")
         ok = False
 
     return ok
@@ -1352,7 +1183,6 @@ def main() -> int:
         ("古地名映射", test_place_resolver),
         ("左图右史链接", test_history_map_link),
         ("现代地点反查历史区划", test_place_admin_resolver),
-        ("书目索引", test_source_book_index),
         ("识典链接", test_shidian_link),
     ]
 
