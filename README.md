@@ -78,6 +78,43 @@ python install_global.py
 
 不想全局注册也行，跳过这一步，本 skill 仍可在项目目录内使用。
 
+### 三、在 Claude 桌面版安装（.skill 文件）
+
+Claude 桌面版使用打包后的 `.skill` 文件安装，**不能直接指向仓库目录**。
+
+**打包步骤**（需先完成"一、搭项目环境"）：
+
+```bash
+# 把主 SKILL.md 单独暂存到临时目录，再打包
+mkdir -p /tmp/chinese-history-expert
+cp SKILL.md /tmp/chinese-history-expert/SKILL.md
+
+# 用 skill-creator 的打包脚本（路径因安装不同而异，下面是示例）
+python -m scripts.package_skill /tmp/chinese-history-expert
+```
+
+打包完成后会生成 `chinese-history-expert.skill` 文件。
+
+> **为什么要单独暂存？** 本仓库在 `cnkgraph/` 和 `dict/` 子目录下各有一个 `SKILL.md`，打包脚本要求每个技能目录里有且仅有一个 `SKILL.md`，直接打包仓库根目录会报错。
+
+**在桌面版安装**：
+
+1. 打开 Claude 桌面版，进入 **Settings → Skills**
+2. 点击 **Install from file**，选择上面生成的 `.skill` 文件
+3. 安装后即可在对话中直接使用
+
+> **注意**：本 skill 的辞典查询和脚本（`mdict`、`cnkgraph` 等）依赖本地环境。在 Claude 桌面版中，技能指令会加载到上下文，但本地工具调用需要 Claude Code 或命令行支持。如果只在桌面版使用，Claude 会按规范作答，但无法运行本地脚本查询辞典和 API。
+
+---
+
+### 四、在 ChatGPT 使用
+
+`.skill` 格式是 Claude 专用的，**ChatGPT 不支持直接安装**。但可以把 `SKILL.md` 的正文内容作为系统提示使用：
+
+1. 打开 ChatGPT，创建一个 **Custom GPT**（或在对话开头粘贴系统提示）
+2. 将 `SKILL.md` 中 YAML frontmatter 以下的正文全部复制，粘贴到 System Prompt 或 Custom GPT Instructions 里
+3. 同样，本地工具（辞典、cnkgraph API、脚本）在 ChatGPT 中无法运行；ChatGPT 会按文字规范作答，但史料查询结果依赖其自身训练数据，无法调用本地辞典
+
 ---
 
 ## 使用方式（在 Claude Code 里）
