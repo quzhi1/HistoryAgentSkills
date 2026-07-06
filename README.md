@@ -1,6 +1,6 @@
-# 史料检索.skill
+# 史料检索 skills
 
-一个跑在 Claude Code 上的中国历史问答 skill。基于《中国历史大辞典》和 [cnkgraph](https://cnkgraph.com) 古籍知识图谱 API，回答问题时**必查两边、必引出处（书名 + 章节名）、必说明被引史料、查不到就说查不到、绝不编造**。
+一组跑在 Claude Code 上的中国历史 skills。主 skill 基于《中国历史大辞典》和 [cnkgraph](https://cnkgraph.com) 古籍知识图谱 API，回答问题时**必查两边、必引出处（书名 + 章节名）、必说明被引史料、查不到就说查不到、绝不编造**。另有 `random-history-anecdote` 轻量入口，可随机抽取一个有趣历史小段子，给原文、译文和出处。
 
 适用范围：先秦至清末的人物、事件、制度、文学作品、文化常识。
 
@@ -68,17 +68,31 @@ Windows PowerShell:
 python install_global.py
 ```
 
-安装脚本会从自身所在目录推导项目根目录，不需要手动改脚本里的路径。它会在 `~/.claude/` 下生成三样东西：
+安装脚本会从自身所在目录推导项目根目录，不需要手动改脚本里的路径。它会在 `~/.claude/` 下生成：
 
 - `skills/chinese-history-expert/SKILL.md` — 全局触发入口（stub，把 Claude 引导回项目）
+- `skills/random-history-anecdote/SKILL.md` — 随机历史小段子入口（stub，把 Claude 引导回项目）
 - `commands/history.md` — `/history` 命令（写入当前项目目录）
 - `agents/history-fact-checker.md` — 史料校验 subagent（写入当前项目目录）
 
-装完之后，**在任何目录启动 `claude`** 都能用本 skill。移动项目目录或修改全局入口模板后，重新运行安装脚本即可刷新全局文件；完整规则仍以项目内 `SKILL.md` 为单一真理源。
+装完之后，**在任何目录启动 `claude`** 都能用这些 skills。移动项目目录或修改全局入口模板后，重新运行安装脚本即可刷新全局文件；主历史问答规则以项目内 `SKILL.md` 为准，随机历史小段子以 `random-history-anecdote/SKILL.md` 为准。
 
-不想全局注册也行，跳过这一步，本 skill 仍可在项目目录内使用。
+不想全局注册也行，跳过这一步，这些 skills 仍可在项目目录内使用。
 
-### 三、在 Claude 桌面版安装（.skill 文件）
+### 三、全局注册到 Codex（可选）
+
+Codex app 使用 `~/.agents/skills/` 下的 skill stub。要让这些 skills 在 Codex 后续会话里可被发现，运行：
+
+```bash
+python install_codex.py
+```
+
+安装脚本会写入：
+
+- `~/.agents/skills/chinese-history-expert/SKILL.md`
+- `~/.agents/skills/random-history-anecdote/SKILL.md`
+
+### 四、在 Claude 桌面版安装（.skill 文件）
 
 Claude 桌面版使用打包后的 `.skill` 文件安装，**不能直接指向仓库目录**。
 
@@ -95,7 +109,15 @@ python -m scripts.package_skill /tmp/chinese-history-expert
 
 打包完成后会生成 `chinese-history-expert.skill` 文件。
 
-> **为什么要单独暂存？** 本仓库在 `cnkgraph/` 和 `dict/` 子目录下各有一个 `SKILL.md`，打包脚本要求每个技能目录里有且仅有一个 `SKILL.md`，直接打包仓库根目录会报错。
+随机历史小段子 skill 也要单独打包：
+
+```bash
+mkdir -p /tmp/random-history-anecdote
+cp random-history-anecdote/SKILL.md /tmp/random-history-anecdote/SKILL.md
+python -m scripts.package_skill /tmp/random-history-anecdote
+```
+
+> **为什么要单独暂存？** 本仓库在根目录、`cnkgraph/`、`dict/` 和 `random-history-anecdote/` 下都有 `SKILL.md`，打包脚本要求每个技能目录里有且仅有一个 `SKILL.md`，直接打包仓库根目录会报错。
 
 **在桌面版安装**：
 
@@ -107,12 +129,12 @@ python -m scripts.package_skill /tmp/chinese-history-expert
 
 ---
 
-### 四、在 ChatGPT 使用
+### 五、在 ChatGPT 使用
 
-`.skill` 格式是 Claude 专用的，**ChatGPT 不支持直接安装**。但可以把 `SKILL.md` 的正文内容作为系统提示使用：
+`.skill` 格式是 Claude 专用的，**ChatGPT 不支持直接安装**。但可以把对应 `SKILL.md` 的正文内容作为系统提示使用：
 
 1. 打开 ChatGPT，创建一个 **Custom GPT**（或在对话开头粘贴系统提示）
-2. 将 `SKILL.md` 中 YAML frontmatter 以下的正文全部复制，粘贴到 System Prompt 或 Custom GPT Instructions 里
+2. 主历史问答复制 `SKILL.md`；随机历史小段子复制 `random-history-anecdote/SKILL.md`
 3. 同样，本地工具（辞典、cnkgraph API、脚本）在 ChatGPT 中无法运行；ChatGPT 会按文字规范作答，但史料查询结果依赖其自身训练数据，无法调用本地辞典
 
 ---
@@ -121,7 +143,7 @@ python -m scripts.package_skill /tmp/chinese-history-expert
 
 ### 规则来源
 
-完整 workflow 以 `SKILL.md` 为单一真理源；`AGENTS.md` 和 `CLAUDE.md` 只是 Codex / Claude Code 的最小入口文件，负责提示代理先读 `SKILL.md`，不再复制完整长规则。
+主历史问答 workflow 以 `SKILL.md` 为单一真理源；随机历史小段子 workflow 以 `random-history-anecdote/SKILL.md` 为单一真理源。`AGENTS.md` 和 `CLAUDE.md` 只是 Codex / Claude Code 的最小入口文件，负责提示代理先读对应 skill，不再复制完整长规则。
 
 ### 方式 1：直接问历史问题
 
@@ -210,6 +232,10 @@ venv/bin/python scripts/update_history_map_index.py
 # 识典古籍检索链接生成
 venv/bin/python scripts/shidian_link.py --source "《魏书》卷三五《崔浩传》" --quote "崔浩字伯渊清河人也" --keyword "崔浩" --json
 
+# 随机发现历史小段子候选；脚本会生成随机探针并检索 cnkgraph 全库
+venv/bin/python scripts/random_anecdote_seed.py --json
+venv/bin/python scripts/random_anecdote_seed.py --attempts 15 --candidates 8 --json
+
 # 按需检索本地史料学 EPUB（只作搜集方向参考，不作事实证据）
 venv/bin/python scripts/book_search.py "甲骨文" --limit 5
 
@@ -225,6 +251,16 @@ venv/bin/python cnkgraph/scripts/query_api.py people --name 苏轼
 venv/bin/python cnkgraph/scripts/query_api.py book --keyword 崔浩
 ```
 
+### 方式 5：随机历史小段子
+
+```
+> 来个历史段子
+> random-history-anecdote
+> 来个机智一点的历史小故事
+```
+
+这个入口会先运行 `scripts/random_anecdote_seed.py` 动态发现候选：脚本随机生成古汉语检索探针，调用 cnkgraph `Book/Find` 搜全库并随机跳页，不读取固定段子池。之后再用 cnkgraph 查原文、用《中国历史大辞典》核定人物或书名。输出刻意很短：原文、出处、译文；不另写“好玩处”。这里“短”指不展开史论，原文 1000 字以内都可接受，优先保留完整情节。它沿用主 workflow 的年号换算和古地名今地括注，但明确**不附识典古籍链接**、**不附左图右史地图链接**；查不到可靠原文就重跑发现或明说。
+
 ---
 
 ## 项目结构
@@ -234,10 +270,13 @@ HistoryAgentSkills/
 ├── AGENTS.md                       # Codex 最小入口，指向 SKILL.md
 ├── CLAUDE.md                       # Claude Code 最小入口，指向 SKILL.md
 ├── SKILL.md                        # 主 skill：详细工作流程、回答模板、引用规范
+├── random-history-anecdote/
+│   └── SKILL.md                    # 随机历史小段子 skill：短答、随机、无识典/地图链接
 ├── README.md                       # 本文件
 ├── install-global.sh               # 一键全局注册到 ~/.claude/
 ├── install-global.ps1              # Windows PowerShell 全局注册入口
 ├── install_global.py               # 跨平台全局注册主实现
+├── install_codex.py                # 注册到 Codex ~/.agents/skills/
 ├── setup_venv.sh                   # 一键搭虚拟环境
 ├── setup_venv.ps1                  # Windows PowerShell 环境设置入口
 ├── setup_venv.py                   # 跨平台环境设置主实现
@@ -261,6 +300,7 @@ HistoryAgentSkills/
 │
 ├── scripts/
 │   ├── history_query.py            # 综合查询脚本（史料方向 + 年号 + 辞典 + API）
+│   ├── random_anecdote_seed.py     # 从 cnkgraph 全库随机发现历史小段子候选
 │   ├── dynasty_converter.py        # 通过 cnkgraph Calendar API 换算年号纪年
 │   ├── place_resolver.py           # CHGIS/TGAZ 古地名今地映射
 │   ├── place_admin_resolver.py     # 现代/后世定位线索反查历史地名与地图 admin
@@ -292,6 +332,7 @@ HistoryAgentSkills/
 7. **古地名首次出现必须标注今地**：凡最终回答保留顺天府、晋阳、长安、凤翔等古地名，先建清单，查 CHGIS/TGAZ 并用现代边界反查；正文首次出现处必须自然括注，如“深州乐寿（今河北省沧州市献县）”，不输出内部技术依据，不等同古今辖境，也不能只在文末补地点清单
 8. **左图右史逐地名核验，只给同代同一级行政区、过渡期前朝区划链接，或已标明限制的同代时代总图**：最终回答保留的每个古地名都要运行 `scripts/history_map_link.py`；运行前必须先用辞典/cnkgraph 检索该地点在相应时代所隶属的同代一级行政区，不能用州、府、郡、县或现代省份反推；若地名直查失败但材料给出现代/后世定位线索，先用 `scripts/place_admin_resolver.py` 反查历史地名并验证 admin；若处于王朝交替初期、新朝一级区划尚未建立，可使用经证据确认的前朝区划图；若左图右史官方索引用合并/分置期题名承载目标 admin，脚本返回 `coverage: "admin_substitute"` 时可交付链接，但正文必须保留原图名并说明对应关系；若已确认 admin 但索引没有精确或替代专题图，可用 `--allow-overview` 返回 `overview` 同代时代总图，正文必须标明不是一级区划专题图；确认不到 admin 也要不传 `--admin` 跑一次并记录 `needs_admin`，不得静默省略；匹配不到就不猜；链接必须来自 `data/history_map_index.json` 中的 `/#/pageNN/html?...` hash route，不手写 `/pageNN/html?...` 直连路径；正文必须逐地名交付地图链接或不附原因
 9. **识典检索链接逐条交付**：每条史料短引都要用 `scripts/shidian_link.py` 生成 `[识典检索](...)`；关键词优先取原文短引中的关键片段，不能只用笼统书名、人名或朝代代替。识典链接用于辅助读者核查，不等同于已解析到原书章节页，不能手写或猜测书页链接
+   - 例外：`random-history-anecdote` 为短答入口，不附识典链接；但仍必须查到原文和书名 + 卷/篇/章节名出处。
 10. **EPUB 按需只作方向**：本地史料学书籍可帮助推断应查哪些史料，但不能替代辞典与古籍原文；没实际运行或没影响检索时，不得暗示回答参考了它们
 11. **查不到就说查不到**——绝不基于训练数据补全、绝不编造原文、绝不"古代应该有……"
 

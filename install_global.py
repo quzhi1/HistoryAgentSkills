@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Install the project as a global Claude Code skill."""
+"""Install the project as global Claude Code skills."""
 
 from __future__ import annotations
 
@@ -18,6 +18,13 @@ def _insert_after_frontmatter(text: str, block: str) -> str:
         return block + "\n" + text
     insert_at = end + len("\n---")
     return text[:insert_at] + "\n\n" + block + text[insert_at:]
+
+
+def _write_text_replacing_symlink(path: Path, text: str) -> None:
+    """Write generated global files without following existing symlinks into the repo."""
+    if path.is_symlink():
+        path.unlink()
+    path.write_text(text, encoding="utf-8")
 
 
 def render_skill_stub(project_root: Path) -> str:
@@ -72,6 +79,57 @@ description: 中国历史问题专家（基于《中国历史大辞典》和 cnk
 - 史料引用必须包含**书名 + 章节名**（如《魏书》卷三五《崔浩传》）
 - 必须补全六类细节：时间、地点、相关人物、起因、经过、结果
 - 查不到就说查不到，绝不基于训练数据编造
+"""
+
+
+def render_anecdote_skill_stub(project_root: Path) -> str:
+    root = str(project_root)
+    runner = str(project_root / "scripts" / "run_in_venv.py")
+    skill_path = str(project_root / "random-history-anecdote" / "SKILL.md")
+    return f"""---
+name: random-history-anecdote
+description: 随机提供一个有趣、短小、经史料核验的中国古代历史段子。适合用户说“来个历史段子”“随机历史小故事”等请求；输出原文、译文和出处，保持简短。不附识典古籍链接和左图右史地图链接，但仍按项目规则换算年号、标注古地名今地，查不到就重抽或明说。
+---
+
+# 随机历史小段子（全局触发入口）
+
+本文件是项目 `{root}` 的随机历史段子 skill 入口。**真正的工作规则在项目里**——本文件只负责把 Claude 引导过去。
+
+## 启动步骤（必做，按顺序）
+
+1. **切换到项目目录**：
+
+   macOS/Linux:
+   ```bash
+   cd "{root}"
+   ```
+
+   Windows PowerShell:
+   ```powershell
+   Set-Location "{root}"
+   ```
+
+2. **读项目守则与本 skill 规范**：
+
+   - 先读 `{root}/CLAUDE.md`（操作约束、命令规范、红线）
+   - 再读 `{skill_path}`（随机段子的详细流程和输出格式）
+
+3. **先动态发现候选，再查证据**。命令优先通过跨平台 runner 调用，不需要激活虚拟环境：
+
+   ```bash
+   python "{runner}" scripts/random_anecdote_seed.py --json
+   python "{runner}" cnkgraph/scripts/query_api.py find --keyword "<候选 keyword 或原文短句>"
+   python "{runner}" mdict -q "<人物或书名>" dict/历史辞典4合1.mdx
+   ```
+
+## 关键例外
+
+- 不附识典古籍链接。
+- 不附左图右史地图链接。
+- 仍要真实查询原文和出处。
+- 不使用固定段子池；`random_anecdote_seed.py` 每次随机生成探针并检索 cnkgraph 全库。
+- 出现年号要换算；保留古地名要查今地。
+- 输出保持简短：原文、出处、译文；不另写“好玩处”。
 """
 
 
@@ -172,6 +230,8 @@ def install_global(project_root: Path = PROJECT_ROOT, claude_dir: Path | None = 
 
     required = [
         project_root / "SKILL.md",
+        project_root / "random-history-anecdote" / "SKILL.md",
+        project_root / "scripts" / "random_anecdote_seed.py",
         project_root / "CLAUDE.md",
         project_root / ".claude" / "agents" / "history-fact-checker.md",
     ]
@@ -180,19 +240,22 @@ def install_global(project_root: Path = PROJECT_ROOT, claude_dir: Path | None = 
             raise FileNotFoundError(f"找不到必要文件: {path}")
 
     skill_dir = claude_dir / "skills" / "chinese-history-expert"
+    anecdote_skill_dir = claude_dir / "skills" / "random-history-anecdote"
     commands_dir = claude_dir / "commands"
     agents_dir = claude_dir / "agents"
-    for directory in (skill_dir, commands_dir, agents_dir):
+    for directory in (skill_dir, anecdote_skill_dir, commands_dir, agents_dir):
         directory.mkdir(parents=True, exist_ok=True)
 
     outputs = {
         "skill": skill_dir / "SKILL.md",
+        "anecdote_skill": anecdote_skill_dir / "SKILL.md",
         "command": commands_dir / "history.md",
         "agent": agents_dir / "history-fact-checker.md",
     }
-    outputs["skill"].write_text(render_skill_stub(project_root), encoding="utf-8")
-    outputs["command"].write_text(render_history_command(project_root), encoding="utf-8")
-    outputs["agent"].write_text(render_fact_checker(project_root), encoding="utf-8")
+    _write_text_replacing_symlink(outputs["skill"], render_skill_stub(project_root))
+    _write_text_replacing_symlink(outputs["anecdote_skill"], render_anecdote_skill_stub(project_root))
+    _write_text_replacing_symlink(outputs["command"], render_history_command(project_root))
+    _write_text_replacing_symlink(outputs["agent"], render_fact_checker(project_root))
     return outputs
 
 
@@ -211,7 +274,8 @@ def main() -> int:
     print("✅ 全局注册完成")
     print("")
     print("已安装：")
-    print(f"  • skill stub: {outputs['skill']}")
+    print(f"  • history skill stub: {outputs['skill']}")
+    print(f"  • anecdote skill stub: {outputs['anecdote_skill']}")
     print(f"  • /history 命令: {outputs['command']}")
     print(f"  • fact-checker subagent: {outputs['agent']}")
     print("")

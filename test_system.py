@@ -83,15 +83,18 @@ def test_files() -> bool:
         "scripts/place_admin_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
+        "scripts/random_anecdote_seed.py",
         "scripts/update_history_map_index.py",
         "scripts/run_in_venv.py",
         "scripts/venv_utils.py",
         "data/history_map_index.json",
         "setup_venv.py",
         "SKILL.md",
+        "random-history-anecdote/SKILL.md",
         "AGENTS.md",
         "CLAUDE.md",
         "install_global.py",
+        "install_codex.py",
         "setup_venv.sh",
         "setup_venv.ps1",
         "install-global.sh",
@@ -179,6 +182,7 @@ def test_workflow_guardrails() -> bool:
             "必说明被引史料",
             "每部被引用史料都要有简介",
             "单一真理源",
+            "install_codex.py",
         ],
         "CLAUDE.md": [
             "单一真理源",
@@ -226,6 +230,19 @@ def test_workflow_guardrails() -> bool:
             "<史料书名>",
             "缺少被引史料说明",
         ],
+        "random-history-anecdote/SKILL.md": [
+            "随机历史小段子",
+            "不输出识典",
+            "不输出左图右史",
+            "输出原文、译文和出处",
+            "不另写“好玩处”",
+            "不使用固定段子池",
+            "scripts/random_anecdote_seed.py",
+            "scripts/dynasty_converter.py",
+            "scripts/place_resolver.py",
+            "译文只翻译原文",
+            "查不到可靠原文",
+        ],
     }
     ok = True
     for filename, needles in requirements.items():
@@ -271,8 +288,10 @@ def test_cross_platform_installation() -> bool:
         "install-global.sh",
         "setup_venv.py",
         "install_global.py",
+        "install_codex.py",
         "setup_venv.ps1",
         "install-global.ps1",
+        "random-history-anecdote/SKILL.md",
         ".claude/commands/history.md",
         ".claude/agents/history-fact-checker.md",
     ]
@@ -293,17 +312,35 @@ def test_cross_platform_installation() -> bool:
     with TemporaryDirectory() as tmpdir:
         outputs = install_global(project_root=ROOT, claude_dir=Path(tmpdir))
         skill_text = outputs["skill"].read_text(encoding="utf-8")
+        anecdote_skill_text = outputs["anecdote_skill"].read_text(encoding="utf-8")
         command_text = outputs["command"].read_text(encoding="utf-8")
         agent_text = outputs["agent"].read_text(encoding="utf-8")
         if (
             str(ROOT) in skill_text
+            and str(ROOT / "random-history-anecdote" / "SKILL.md") in anecdote_skill_text
             and str(ROOT / "scripts" / "run_in_venv.py") in command_text
             and "全局安装信息" in agent_text
             and "__PROJECT_ROOT__" not in command_text
         ):
-            print("✓ 全局安装会按当前项目目录生成 skill/command/agent")
+            print("✓ 全局安装会按当前项目目录生成 skill/anecdote skill/command/agent")
         else:
             print("✗ 全局安装生成物缺少当前项目目录或 runner")
+            ok = False
+
+    with TemporaryDirectory() as tmpdir:
+        from install_codex import install_codex
+
+        outputs = install_codex(project_root=ROOT, agents_dir=Path(tmpdir))
+        skill_text = outputs["skill"].read_text(encoding="utf-8")
+        anecdote_skill_text = outputs["anecdote_skill"].read_text(encoding="utf-8")
+        if (
+            str(ROOT / "AGENTS.md") in skill_text
+            and str(ROOT / "random-history-anecdote" / "SKILL.md") in anecdote_skill_text
+            and "__PROJECT_ROOT__" not in skill_text
+        ):
+            print("✓ Codex 全局安装会按当前项目目录生成 skill/anecdote skill")
+        else:
+            print("✗ Codex 全局安装生成物缺少当前项目目录")
             ok = False
 
     return ok
@@ -322,11 +359,13 @@ def test_scripts_compile() -> bool:
         "scripts/place_admin_resolver.py",
         "scripts/history_map_link.py",
         "scripts/shidian_link.py",
+        "scripts/random_anecdote_seed.py",
         "scripts/update_history_map_index.py",
         "scripts/run_in_venv.py",
         "scripts/venv_utils.py",
         "setup_venv.py",
         "install_global.py",
+        "install_codex.py",
     ]
     result = subprocess.run(
         [str(venv_executable(ROOT, "python")), "-m", "py_compile", *scripts],
@@ -340,6 +379,94 @@ def test_scripts_compile() -> bool:
         return True
     print(result.stderr)
     return False
+
+
+def test_random_anecdote_seed() -> bool:
+    """Check random anecdote discovery helpers without network access."""
+    print("\n测试6: 随机历史段子发现...")
+    from random_anecdote_seed import extract_candidates, random_probe, result_page_count, score_candidate
+
+    ok = True
+
+    result = subprocess.run(
+        [str(venv_executable(ROOT, "python")), "scripts/random_anecdote_seed.py", "--sample-probe", "--json"],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        timeout=5,
+    )
+    if result.returncode == 0:
+        payload = json.loads(result.stdout)
+        if payload.get("status") == "ok" and payload.get("strategy") == "sample_probe_only" and payload.get("keyword"):
+            print("✓ 可离线生成随机全库检索探针")
+        else:
+            print(f"✗ 随机探针输出结构不符合预期: {payload}")
+            ok = False
+    else:
+        print(f"✗ 随机探针脚本失败: {result.stderr or result.stdout}")
+        ok = False
+
+    probe = random_probe()
+    if isinstance(probe, str) and 1 <= len(probe) <= 6:
+        print("✓ 随机探针来自运行时生成，不依赖段子清单")
+    else:
+        print(f"✗ 随机探针不符合预期: {probe!r}")
+        ok = False
+
+    fixture = {
+        "Count": 250,
+        "PageSize": 100,
+        "Result": [
+            {
+                "Books": [
+                    {
+                        "Book": "世说新语-刘宋-刘义庆",
+                        "BookId": "KR3l0002",
+                        "Volumes": [
+                            {
+                                "Volume": "卷六",
+                                "VolumeId": "KR3l0002_006",
+                                "Pages": [
+                                    {
+                                        "Page": "6-43a",
+                                        "PreviousText": "王蓝田性急，尝食鸡子，",
+                                        "MatchedText": "以箸刺之",
+                                        "LaterText": "不得，便大怒，举以掷地。",
+                                    }
+                                ],
+                            }
+                        ],
+                    }
+                ]
+            }
+        ],
+    }
+    if result_page_count(fixture) == 3:
+        print("✓ 会按 Count/PageSize 计算随机跳页范围")
+    else:
+        print("✗ 随机跳页范围计算错误")
+        ok = False
+
+    candidates = extract_candidates(fixture, "以")
+    if candidates and candidates[0].book.startswith("世说新语") and "王蓝田性急" in candidates[0].text:
+        print("✓ 能从 cnkgraph 结构中提取叙事候选")
+    else:
+        print(f"✗ 叙事候选提取失败: {candidates}")
+        ok = False
+
+    long_story = (
+        "王公与客坐，客问曰：今日何以处事。公笑曰：事急则缓，言多则乱。"
+        "俄而吏持牍至，众皆失色，公乃顾左右曰：先饭后判。客问其故，"
+        "公曰：饥者易怒，怒者易误。遂命取案，逐条问答，吏不能欺。"
+    ) * 4
+    long_score = score_candidate("世说新语-刘宋-刘义庆", "卷一", long_story, "KR3l0002")
+    if 300 < len(long_story) < 1000 and long_score >= 8:
+        print("✓ 数百字叙事候选不会被旧的 180 字限制误伤")
+    else:
+        print(f"✗ 数百字叙事候选评分过低: length={len(long_story)}, score={long_score}")
+        ok = False
+
+    return ok
 
 
 class FakeCalendarClient:
@@ -427,7 +554,7 @@ def _multi_calendar_payload(year: int, date_era_name: str | None, rows, era_name
 
 def test_dynasty_converter() -> bool:
     """Test reign-year conversion with fixtures."""
-    print("\n测试6: 年号换算...")
+    print("\n测试7: 年号换算...")
     from dynasty_converter import convert_era_expression
 
     ok = True
@@ -465,7 +592,7 @@ def test_dynasty_converter() -> bool:
 
 def test_epub_search() -> bool:
     """Test local EPUB indexing and searching."""
-    print("\n测试7: EPUB 全文检索...")
+    print("\n测试8: EPUB 全文检索...")
     from book_search import search_books
 
     try:
@@ -648,7 +775,7 @@ def _square(min_x: float, min_y: float, max_x: float, max_y: float):
 
 def test_place_resolver() -> bool:
     """Test historical placename to modern administration resolution offline."""
-    print("\n测试8: 古地名现代行政区划映射...")
+    print("\n测试9: 古地名现代行政区划映射...")
     from place_resolver import BoundaryRecord, ModernBoundaryResolver, resolve_place
 
     boundary_resolver = ModernBoundaryResolver(
@@ -747,7 +874,7 @@ def test_place_resolver() -> bool:
 
 def test_history_map_link() -> bool:
     """Test left-map/right-history route matching with the static index."""
-    print("\n测试9: 左图右史同代一级区划链接...")
+    print("\n测试10: 左图右史同代一级区划链接...")
     from history_map_link import resolve_history_map_link, transition_map_pages
 
     ok = True
@@ -903,7 +1030,7 @@ def test_history_map_link() -> bool:
 
 def test_place_admin_resolver() -> bool:
     """Test reverse modern-location to historical admin resolution offline."""
-    print("\n测试10: 现代地点线索反查历史地名与地图区划...")
+    print("\n测试11: 现代地点线索反查历史地名与地图区划...")
     from place_admin_resolver import resolve_place_admin
     from place_resolver import BoundaryRecord, ModernBoundaryResolver
 
@@ -1075,7 +1202,7 @@ def test_place_admin_resolver() -> bool:
 
 def test_shidian_link() -> bool:
     """Test Shidian Guji search URL generation offline."""
-    print("\n测试11: 识典古籍检索链接生成...")
+    print("\n测试12: 识典古籍检索链接生成...")
     from shidian_link import build_search_url
 
     ok = True
@@ -1178,6 +1305,7 @@ def main() -> int:
         ("工作流强制门禁", test_workflow_guardrails),
         ("跨平台安装", test_cross_platform_installation),
         ("脚本语法", test_scripts_compile),
+        ("随机历史段子候选", test_random_anecdote_seed),
         ("年号换算", test_dynasty_converter),
         ("EPUB检索", test_epub_search),
         ("古地名映射", test_place_resolver),
