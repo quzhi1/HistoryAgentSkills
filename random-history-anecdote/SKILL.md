@@ -37,10 +37,15 @@ description: 随机提供一个有趣、短小、经史料核验的中国古代�
 
 > 命令路径默认 macOS/Linux。Windows PowerShell 可用 `python scripts/run_in_venv.py <script.py|mdict> ...` 或对应 `venv\Scripts\python.exe` / `venv\Scripts\mdict.exe`。
 
-1. 切到项目根目录。
+1. 切到项目根目录，即本 skill 目录**真实位置**的上一级。全局安装时本 skill 目录是 `~/.claude/skills/` 下的符号链接，必须先用 `realpath` 解析，不能直接用符号链接的上一级：
 
 ```bash
-cd /path/to/HistoryAgentSkills
+cd "$(dirname "$(realpath ~/.claude/skills/random-history-anecdote)")"
+# 已在项目目录时直接：cd /path/to/HistoryAgentSkills
+```
+
+```powershell
+Set-Location (Split-Path (Get-Item "$env:USERPROFILE\.claude\skills\random-history-anecdote").Target)
 ```
 
 2. 随机发现候选。

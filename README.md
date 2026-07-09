@@ -50,32 +50,37 @@ python setup_venv.py
 
 ### 二、全局注册到 Claude Code（推荐）
 
-macOS / Linux:
+Claude Code 的个人技能就是 `~/.claude/skills/<技能名>/SKILL.md`，[官方文档](https://code.claude.com/docs/en/skills)明确支持用**符号链接**指向仓库目录。全局注册不需要脚本，建 4 个符号链接即可：
+
+macOS / Linux（在项目根目录执行）:
 
 ```bash
-./install-global.sh
+mkdir -p ~/.claude/skills ~/.claude/commands ~/.claude/agents
+ln -sfn "$PWD" ~/.claude/skills/chinese-history-expert
+ln -sfn "$PWD/random-history-anecdote" ~/.claude/skills/random-history-anecdote
+ln -sfn "$PWD/.claude/commands/history.md" ~/.claude/commands/history.md
+ln -sfn "$PWD/.claude/agents/history-fact-checker.md" ~/.claude/agents/history-fact-checker.md
 ```
 
-Windows PowerShell:
+Windows PowerShell（需开发者模式或管理员权限，在项目根目录执行）:
 
 ```powershell
-.\install-global.ps1
+$claude = "$env:USERPROFILE\.claude"
+New-Item -ItemType Directory -Force -Path "$claude\skills", "$claude\commands", "$claude\agents" | Out-Null
+New-Item -ItemType SymbolicLink -Force -Path "$claude\skills\chinese-history-expert" -Target (Get-Location)
+New-Item -ItemType SymbolicLink -Force -Path "$claude\skills\random-history-anecdote" -Target "$PWD\random-history-anecdote"
+New-Item -ItemType SymbolicLink -Force -Path "$claude\commands\history.md" -Target "$PWD\.claude\commands\history.md"
+New-Item -ItemType SymbolicLink -Force -Path "$claude\agents\history-fact-checker.md" -Target "$PWD\.claude\agents\history-fact-checker.md"
 ```
 
-跨平台通用方式：
+四个链接分别是：
 
-```bash
-python install_global.py
-```
+- `skills/chinese-history-expert` → 仓库根目录 — 主历史问答 skill（`SKILL.md` 在仓库根）
+- `skills/random-history-anecdote` → `random-history-anecdote/` — 随机历史小段子 skill
+- `commands/history.md` — `/history` 斜杠命令
+- `agents/history-fact-checker.md` — 史料校验 subagent
 
-安装脚本会从自身所在目录推导项目根目录，不需要手动改脚本里的路径。它会在 `~/.claude/` 下生成：
-
-- `skills/chinese-history-expert/SKILL.md` — 全局触发入口（stub，把 Claude 引导回项目）
-- `skills/random-history-anecdote/SKILL.md` — 随机历史小段子入口（stub，把 Claude 引导回项目）
-- `commands/history.md` — `/history` 命令（写入当前项目目录）
-- `agents/history-fact-checker.md` — 史料校验 subagent（写入当前项目目录）
-
-装完之后，**在任何目录启动 `claude`** 都能用这些 skills。移动项目目录或修改全局入口模板后，重新运行安装脚本即可刷新全局文件；主历史问答规则以项目内 `SKILL.md` 为准，随机历史小段子以 `random-history-anecdote/SKILL.md` 为准。
+装完之后，**在任何目录启动 `claude`** 都能用这些 skills，且仓库里改了规则全局立即生效，不需要重装。移动项目目录后重跑上面的命令重建链接即可。卸载就是删链接：`rm ~/.claude/skills/chinese-history-expert` 等。
 
 不想全局注册也行，跳过这一步，这些 skills 仍可在项目目录内使用。
 
@@ -273,9 +278,6 @@ HistoryAgentSkills/
 ├── random-history-anecdote/
 │   └── SKILL.md                    # 随机历史小段子 skill：短答、随机、无识典/地图链接
 ├── README.md                       # 本文件
-├── install-global.sh               # 一键全局注册到 ~/.claude/
-├── install-global.ps1              # Windows PowerShell 全局注册入口
-├── install_global.py               # 跨平台全局注册主实现
 ├── install_codex.py                # 注册到 Codex ~/.agents/skills/
 ├── setup_venv.sh                   # 一键搭虚拟环境
 ├── setup_venv.ps1                  # Windows PowerShell 环境设置入口

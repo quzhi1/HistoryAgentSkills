@@ -7,9 +7,17 @@ allowed-tools: Bash, Read, Grep, Glob
 
 用户查询的关键词：**$ARGUMENTS**
 
+## 步骤 0：定位项目根目录
+
+本命令可能通过 `~/.claude/commands/` 的符号链接全局触发，当前目录不一定是项目根目录。后续每个 Bash 会话都先执行（在项目内触发时 `realpath` 失败，留在当前目录即可）：
+
+```bash
+cd "$(realpath ~/.claude/skills/chinese-history-expert 2>/dev/null || echo .)"
+```
+
 ## 步骤 1：先跑综合查询脚本
 
-!`python scripts/run_in_venv.py scripts/history_query.py "$ARGUMENTS"`
+!`cd "$(realpath ~/.claude/skills/chinese-history-expert 2>/dev/null || echo .)" && python scripts/run_in_venv.py scripts/history_query.py "$ARGUMENTS"`
 
 ## 步骤 2：年号换算与史料方向（必做）
 

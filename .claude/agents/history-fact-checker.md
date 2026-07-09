@@ -10,7 +10,13 @@ tools: Bash, Read, Grep, Glob
 
 ## 工作目录与命令规范
 
-所有命令都在本项目根目录下执行。**优先使用跨平台 runner 或 venv 二进制直接调用**，不要用 `source venv/bin/activate`：
+所有命令都在本项目根目录下执行。本 agent 可能通过 `~/.claude/agents/` 的符号链接全局触发，先切到项目根目录（在项目内触发时 `realpath` 失败，留在当前目录即可）：
+
+```bash
+cd "$(realpath ~/.claude/skills/chinese-history-expert 2>/dev/null || echo .)"
+```
+
+**优先使用跨平台 runner 或 venv 二进制直接调用**，不要用 `source venv/bin/activate`：
 
 ```bash
 python scripts/run_in_venv.py mdict -q "<词>" dict/历史辞典4合1.mdx
