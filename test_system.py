@@ -93,12 +93,9 @@ def test_files() -> bool:
         "random-history-anecdote/SKILL.md",
         "AGENTS.md",
         "CLAUDE.md",
-        "install_global.py",
         "install_codex.py",
         "setup_venv.sh",
         "setup_venv.ps1",
-        "install-global.sh",
-        "install-global.ps1",
         "dict/SKILL.md",
         "cnkgraph/SKILL.md",
     ]
@@ -259,9 +256,6 @@ def test_workflow_guardrails() -> bool:
 def test_cross_platform_installation() -> bool:
     """Check setup/install scripts avoid hard-coded platform paths."""
     print("\n测试4: 跨平台安装脚本...")
-    from tempfile import TemporaryDirectory
-
-    from install_global import install_global
     from venv_utils import display_venv_command
 
     ok = True
@@ -285,12 +279,9 @@ def test_cross_platform_installation() -> bool:
     forbidden = "/Users/zhi.q/HistoryAgentSkills"
     checked_files = [
         "setup_venv.sh",
-        "install-global.sh",
         "setup_venv.py",
-        "install_global.py",
         "install_codex.py",
         "setup_venv.ps1",
-        "install-global.ps1",
         "random-history-anecdote/SKILL.md",
         ".claude/commands/history.md",
         ".claude/agents/history-fact-checker.md",
@@ -309,23 +300,21 @@ def test_cross_platform_installation() -> bool:
     else:
         print("✓ setup_venv.sh 不再依赖 source venv/bin/activate")
 
-    with TemporaryDirectory() as tmpdir:
-        outputs = install_global(project_root=ROOT, claude_dir=Path(tmpdir))
-        skill_text = outputs["skill"].read_text(encoding="utf-8")
-        anecdote_skill_text = outputs["anecdote_skill"].read_text(encoding="utf-8")
-        command_text = outputs["command"].read_text(encoding="utf-8")
-        agent_text = outputs["agent"].read_text(encoding="utf-8")
-        if (
-            str(ROOT) in skill_text
-            and str(ROOT / "random-history-anecdote" / "SKILL.md") in anecdote_skill_text
-            and str(ROOT / "scripts" / "run_in_venv.py") in command_text
-            and "全局安装信息" in agent_text
-            and "__PROJECT_ROOT__" not in command_text
-        ):
-            print("✓ 全局安装会按当前项目目录生成 skill/anecdote skill/command/agent")
-        else:
-            print("✗ 全局安装生成物缺少当前项目目录或 runner")
+    # 全局安装是符号链接（见 README「全局注册到 Claude Code」），被链接的文件
+    # 必须自己能解析项目根目录，不能假设 cwd 已在项目内。
+    resolver = 'realpath ~/.claude/skills/chinese-history-expert'
+    for filename in (".claude/commands/history.md", ".claude/agents/history-fact-checker.md"):
+        if resolver not in (ROOT / filename).read_text(encoding="utf-8"):
+            print(f"✗ {filename} 缺少符号链接安装时的项目根目录解析步骤")
             ok = False
+    anecdote_text = (ROOT / "random-history-anecdote" / "SKILL.md").read_text(encoding="utf-8")
+    if "realpath ~/.claude/skills/random-history-anecdote" not in anecdote_text:
+        print("✗ random-history-anecdote/SKILL.md 缺少符号链接安装时的项目根目录解析步骤")
+        ok = False
+    if ok:
+        print("✓ 符号链接全局安装的入口文件都会自行解析项目根目录")
+
+    from tempfile import TemporaryDirectory
 
     with TemporaryDirectory() as tmpdir:
         from install_codex import install_codex
@@ -364,7 +353,6 @@ def test_scripts_compile() -> bool:
         "scripts/run_in_venv.py",
         "scripts/venv_utils.py",
         "setup_venv.py",
-        "install_global.py",
         "install_codex.py",
     ]
     result = subprocess.run(
