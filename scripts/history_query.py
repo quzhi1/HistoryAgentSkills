@@ -27,6 +27,42 @@ DICT_PATH = ROOT / "dict" / "历史辞典4合1.mdx"
 MDICT_BIN = venv_executable(ROOT, "mdict", must_exist=False)
 API_BASE_URL = "https://open.cnkgraph.com/api"
 TIMEOUT = 30
+QUERY_STATUS_FOUND = "found"
+QUERY_STATUS_NOT_FOUND = "not_found"
+QUERY_STATUS_ERROR = "error"
+
+
+def query_found(data: Any) -> Dict[str, Any]:
+    return {"status": QUERY_STATUS_FOUND, "data": data}
+
+
+def query_not_found(reason: str) -> Dict[str, Any]:
+    return {"status": QUERY_STATUS_NOT_FOUND, "reason": reason}
+
+
+def query_error(reason: str) -> Dict[str, Any]:
+    return {"status": QUERY_STATUS_ERROR, "reason": reason}
+
+
+def payload_has_results(payload: Any) -> bool:
+    """Return whether a successful API response contains a usable result."""
+    if payload is None:
+        return False
+    if isinstance(payload, list):
+        return bool(payload)
+    if not isinstance(payload, dict):
+        return bool(payload)
+
+    for key in ("Result", "result", "Results", "results", "Data", "data", "Items", "items"):
+        if key in payload:
+            return bool(payload[key])
+    for key in ("Count", "count", "Total", "total"):
+        if key in payload:
+            try:
+                return int(payload[key]) > 0
+            except (TypeError, ValueError):
+                return False
+    return bool(payload)
 
 class HistoryExpert:
     """历史专家系统"""
@@ -54,14 +90,12 @@ class HistoryExpert:
             return None
         return result if result.get("matches") or result.get("errors") else None
         
-    def query_dictionary(self, keyword: str) -> Optional[str]:
-        """查询历史辞典"""
+    def query_dictionary(self, keyword: str) -> Dict[str, Any]:
+        """查询历史辞典，并区分命中、无结果和查询失败。"""
         if not os.path.exists(self.dict_path):
-            print(f"⚠️  找不到辞典文件: {self.dict_path}")
-            return None
+            return query_error("辞典文件不可用")
         if not MDICT_BIN.exists():
-            print(f"⚠️  找不到 mdict: {MDICT_BIN}，请运行 ./setup_venv.sh")
-            return None
+            return query_error("mdict 工具不可用，请运行 ./setup_venv.sh")
         
         try:
             result = subprocess.run(
@@ -72,21 +106,22 @@ class HistoryExpert:
             )
             
             if result.returncode == 0 and result.stdout.strip():
-                return result.stdout.strip()
-            return None
+                return query_found(result.stdout.strip())
+            if result.returncode == 0:
+                return query_not_found(f"辞典未命中关键词：{keyword}")
+            return query_error("辞典查询命令执行失败")
             
         except subprocess.TimeoutExpired:
-            print(f"⚠️  辞典查询超时: {keyword}")
-            return None
+            return query_error(f"辞典查询超时：{keyword}")
         except FileNotFoundError:
-            print("⚠️  未安装 mdict-utils，请运行: ./setup_venv.sh")
-            return None
-        except Exception as e:
-            print(f"⚠️  辞典查询出错: {e}")
-            return None
+            return query_error("mdict 工具不可用，请运行 ./setup_venv.sh")
+        except Exception:
+            return query_error("辞典查询发生错误")
     
-    def query_api_poetry(self, keyword: str = None, author: str = None) -> Optional[Dict]:
-        """查询诗词API。按 Swagger 使用 POST /api/Writing/Find，请求体为 WritingModel。"""
+    def query_api_poetry(
+        self, keyword: Optional[str] = None, author: Optional[str] = None
+    ) -> Dict[str, Any]:
+        """查询诗词API，并区分命中、无结果和查询失败。"""
         url = f"{self.api_base}/Writing/Find"
         body = {"PageNo": 0}
         if keyword:
@@ -94,7 +129,7 @@ class HistoryExpert:
         if author:
             body["Author"] = author
         if not (keyword or author):
-            return None
+            return query_error("诗词查询缺少关键词或作者")
         try:
             response = requests.post(
                 url,
@@ -102,14 +137,18 @@ class HistoryExpert:
                 timeout=TIMEOUT,
                 headers={"Content-Type": "application/json; charset=utf-8"},
             )
+            if response.status_code == 404:
+                return query_not_found("诗词 API 未命中")
             response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            print(f"⚠️  诗词API查询出错: {e}")
-            return None
+            payload = response.json()
+            return query_found(payload) if payload_has_results(payload) else query_not_found("诗词 API 未命中")
+        except requests.exceptions.Timeout:
+            return query_error("诗词 API 查询超时")
+        except (requests.exceptions.RequestException, ValueError):
+            return query_error("诗词 API 查询失败")
     
-    def query_api_books(self, keyword: str) -> Optional[Dict]:
-        """查询古籍API。按 Swagger 使用 POST /api/Book/Search，请求体为关键词的 JSON 字符串。"""
+    def query_api_books(self, keyword: str) -> Dict[str, Any]:
+        """查询古籍API，并区分命中、无结果和查询失败。"""
         url = f"{self.api_base}/Book/Search"
         try:
             response = requests.post(
@@ -118,23 +157,35 @@ class HistoryExpert:
                 timeout=TIMEOUT,
                 headers={"Content-Type": "application/json; charset=utf-8"},
             )
+            if response.status_code == 404:
+                return query_not_found(f"古籍 API 未命中关键词：{keyword}")
             response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            print(f"⚠️  古籍API查询出错: {e}")
-            return None
+            payload = response.json()
+            return query_found(payload) if payload_has_results(payload) else query_not_found(
+                f"古籍 API 未命中关键词：{keyword}"
+            )
+        except requests.exceptions.Timeout:
+            return query_error("古籍 API 查询超时")
+        except (requests.exceptions.RequestException, ValueError):
+            return query_error("古籍 API 查询失败")
     
-    def query_api_people(self, name: str) -> Optional[Dict]:
-        """查询人物API。按 Swagger 使用 GET /api/People/{id}，id 为姓名/朝代键/人物 Id。"""
+    def query_api_people(self, name: str) -> Dict[str, Any]:
+        """查询人物API，并区分命中、无结果和查询失败。"""
         from urllib.parse import quote
         url = f"{self.api_base}/People/{quote(name, safe='')}"
         try:
             response = requests.get(url, timeout=TIMEOUT)
+            if response.status_code == 404:
+                return query_not_found(f"人物 API 未命中：{name}")
             response.raise_for_status()
-            return response.json()
-        except Exception as e:
-            print(f"⚠️  人物API查询出错: {e}")
-            return None
+            payload = response.json()
+            return query_found(payload) if payload_has_results(payload) else query_not_found(
+                f"人物 API 未命中：{name}"
+            )
+        except requests.exceptions.Timeout:
+            return query_error("人物 API 查询超时")
+        except (requests.exceptions.RequestException, ValueError):
+            return query_error("人物 API 查询失败")
     
     def comprehensive_query(self, keyword: str):
         """综合查询：辞典 + API"""
@@ -170,53 +221,73 @@ class HistoryExpert:
         print("📚 步骤1: 查询《中国历史大辞典》...")
         dict_result = self.query_dictionary(keyword)
         
-        if dict_result:
+        if dict_result["status"] == QUERY_STATUS_FOUND:
             print("✓ 找到辞典词条\n")
             print("-"*70)
             print("根据《中国历史大辞典》：\n")
-            print(f"「{dict_result}」")
+            print(f"「{dict_result['data']}」")
             print("-"*70)
-        else:
-            print("✗ 辞典中未找到此词条")
+        elif dict_result["status"] == QUERY_STATUS_NOT_FOUND:
+            print("○ 辞典查询完成，但未命中此词条")
+            print("  无结果只表示该来源未命中，不构成相反证据或矛盾。")
             print("💡 建议: 尝试使用同义词或简化关键词\n")
+        else:
+            print(f"⚠️  辞典查询失败：{dict_result['reason']}")
         
         # 步骤2：查询古籍API（人物）
         print("\n📖 步骤2: 查询古籍文献知识图谱API...")
         print("\n2.1 尝试作为人物查询...")
         people_result = self.query_api_people(keyword)
         
-        if people_result and not people_result.get('error'):
+        poetry_result: Optional[Dict[str, Any]] = None
+        if people_result["status"] == QUERY_STATUS_FOUND:
             print("✓ 找到人物信息")
             # 这里可以进一步格式化输出
             
             # 如果是人物，尝试查询其作品
             print("\n2.2 查询相关诗词作品...")
             poetry_result = self.query_api_poetry(author=keyword)
-            if poetry_result:
+            if poetry_result["status"] == QUERY_STATUS_FOUND:
                 print("✓ 找到相关诗词")
+            elif poetry_result["status"] == QUERY_STATUS_NOT_FOUND:
+                print("○ 诗词 API 查询完成，但未命中相关作品")
+            else:
+                print(f"⚠️  诗词 API 查询失败：{poetry_result['reason']}")
+        elif people_result["status"] == QUERY_STATUS_NOT_FOUND:
+            print("○ 人物 API 查询完成，但未命中人物信息")
         else:
-            print("✗ 未找到人物信息")
+            print(f"⚠️  人物 API 查询失败：{people_result['reason']}")
         
         # 步骤3：查询古籍
         print("\n2.3 查询相关古籍文献...")
         book_result = self.query_api_books(keyword)
         
-        if book_result and not book_result.get('error'):
+        if book_result["status"] == QUERY_STATUS_FOUND:
             print("✓ 找到相关古籍")
+        elif book_result["status"] == QUERY_STATUS_NOT_FOUND:
+            print("○ 古籍 API 查询完成，但未命中相关古籍")
         else:
-            print("✗ 未找到相关古籍")
+            print(f"⚠️  古籍 API 查询失败：{book_result['reason']}")
         
         # 总结
         print("\n" + "="*70)
         print("查询完成")
         print("="*70)
         
-        has_result = dict_result or (people_result and not people_result.get('error')) or (book_result and not book_result.get('error'))
+        primary_results = [dict_result, people_result, book_result]
+        has_result = any(result["status"] == QUERY_STATUS_FOUND for result in primary_results)
+        has_error = any(result["status"] == QUERY_STATUS_ERROR for result in primary_results)
         
         if has_result:
             print("\n✓ 已找到相关资料，可以基于以上信息回答问题")
+            if has_error:
+                print("⚠️  部分来源查询失败；只能使用已成功命中的材料，不能把失败来源当作反证。")
+        elif has_error:
+            print("\n⚠️  当前没有得到可用结果，且至少一个来源查询失败。")
+            print("查询失败不等于无结果；无结果也不构成资料不存在或与问题相矛盾的证据。")
         else:
-            print("\n✗ 未找到相关资料")
+            print("\n○ 已完成的来源均未命中相关资料")
+            print("这只表示当前来源和关键词没有命中，不证明相关资料不存在，也不构成矛盾。")
             print("\n💡 建议:")
             print("  • 检查关键词拼写")
             print("  • 尝试使用同义词或别称")

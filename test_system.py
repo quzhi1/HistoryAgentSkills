@@ -148,7 +148,10 @@ def test_workflow_guardrails() -> bool:
             "admin_substitute",
             "合并/分置期",
             "时代总图",
-            "识典检索链接交付",
+            "识典人工核验入口交付",
+            "search_link_generated",
+            "manual_required",
+            "无结果不等于不存在、矛盾或反证",
             "识典检索 URL",
             "正文出处行已附 [识典检索](url)：是",
             "正文首次出现或“地点与地图核验”已交付",
@@ -167,6 +170,8 @@ def test_workflow_guardrails() -> bool:
             "静默省略",
             "逐条交付",
             "识典检索链接",
+            "识典链接生成不等于原文或出处已经验证",
+            "无结果只表示该来源和关键词未命中",
             "不要手写或猜测识典书页链接",
             "不附左图右史链接",
             "place_admin_resolver.py",
@@ -187,6 +192,8 @@ def test_workflow_guardrails() -> bool:
             "venv/bin/mdict",
             "venv\\Scripts",
             "不要 `source",
+            "识典链接生成不等于已验证",
+            "无结果也不等于矛盾",
             "test_system.py",
         ],
         "AGENTS.md": [
@@ -195,6 +202,8 @@ def test_workflow_guardrails() -> bool:
             "venv/bin/mdict",
             "venv\\Scripts",
             "不要 `source",
+            "识典链接生成不等于已验证",
+            "无结果也不等于矛盾",
             "test_system.py",
         ],
         "COMMON_MISTAKES.md": [
@@ -215,12 +224,16 @@ def test_workflow_guardrails() -> bool:
             "合并/分置期",
             "时代总图",
             "只给史料出处",
+            "错误示例17",
+            "search_link_generated",
+            "无结果或查询失败当作矛盾",
         ],
         ".claude/commands/history.md": [
             "scripts/run_in_venv.py",
             "查询被引用史料说明",
             "<史料书名>",
             "被引史料说明",
+            "无结果不等于资料不存在或矛盾",
         ],
         ".claude/agents/history-fact-checker.md": [
             "被引史料说明核查",
@@ -1190,7 +1203,7 @@ def test_place_admin_resolver() -> bool:
 
 def test_shidian_link() -> bool:
     """Test Shidian Guji search URL generation offline."""
-    print("\n测试12: 识典古籍检索链接生成...")
+    print("\n测试13: 识典古籍人工核验搜索链接生成...")
     from shidian_link import build_search_url
 
     ok = True
@@ -1222,11 +1235,13 @@ def test_shidian_link() -> bool:
     if quote_result.returncode == 0:
         payload = json.loads(quote_result.stdout)
         if (
-            payload["status"] == "search"
+            payload["status"] == "search_link_generated"
             and payload["search_term"] == "崔浩字伯渊清河人也"
             and payload["url"] == build_search_url("崔浩字伯渊清河人也")
+            and payload["verification"] == "manual_required"
+            and payload["verified"] is False
         ):
-            print("✓ CLI JSON 输出交付 search 状态、检索词和 URL")
+            print("✓ CLI JSON 明确交付人工核验状态、检索词和 URL")
         else:
             print(f"✗ CLI JSON 输出字段错误: {payload}")
             ok = False
@@ -1281,6 +1296,111 @@ def test_shidian_link() -> bool:
     return ok
 
 
+def test_query_result_statuses() -> bool:
+    """Ensure no-result and query errors remain distinct states."""
+    print("\n测试12: 查询结果状态区分...")
+    from types import SimpleNamespace
+    from unittest.mock import patch
+
+    import history_query
+    from history_query import (
+        HistoryExpert,
+        QUERY_STATUS_ERROR,
+        QUERY_STATUS_FOUND,
+        QUERY_STATUS_NOT_FOUND,
+    )
+
+    class FakeResponse:
+        def __init__(self, status_code: int, payload: object):
+            self.status_code = status_code
+            self.payload = payload
+
+        def raise_for_status(self) -> None:
+            if self.status_code >= 400:
+                raise requests.exceptions.HTTPError("request failed")
+
+        def json(self) -> object:
+            return self.payload
+
+    ok = True
+    expert = HistoryExpert()
+
+    with patch.object(
+        history_query.subprocess,
+        "run",
+        return_value=SimpleNamespace(returncode=0, stdout="", stderr=""),
+    ):
+        dictionary_miss = expert.query_dictionary("不存在的测试词")
+    if dictionary_miss["status"] == QUERY_STATUS_NOT_FOUND:
+        print("✓ 辞典空结果返回 not_found")
+    else:
+        print(f"✗ 辞典空结果状态错误: {dictionary_miss}")
+        ok = False
+
+    with patch.object(
+        history_query.subprocess,
+        "run",
+        side_effect=subprocess.TimeoutExpired("mdict", 1),
+    ):
+        dictionary_error = expert.query_dictionary("超时测试")
+    if dictionary_error["status"] == QUERY_STATUS_ERROR:
+        print("✓ 辞典超时返回 error，不伪装成 not_found")
+    else:
+        print(f"✗ 辞典超时状态错误: {dictionary_error}")
+        ok = False
+
+    with patch.object(
+        history_query.requests,
+        "get",
+        return_value=FakeResponse(404, {}),
+    ):
+        people_miss = expert.query_api_people("不存在的人物")
+    if people_miss["status"] == QUERY_STATUS_NOT_FOUND:
+        print("✓ API 404 返回 not_found，不升级为矛盾")
+    else:
+        print(f"✗ API 404 状态错误: {people_miss}")
+        ok = False
+
+    with patch.object(
+        history_query.requests,
+        "post",
+        side_effect=requests.exceptions.Timeout(),
+    ):
+        books_error = expert.query_api_books("超时测试")
+    if books_error["status"] == QUERY_STATUS_ERROR:
+        print("✓ API 超时返回 error，不伪装成 not_found")
+    else:
+        print(f"✗ API 超时状态错误: {books_error}")
+        ok = False
+
+    with patch.object(
+        history_query.requests,
+        "post",
+        return_value=FakeResponse(200, {"Count": 1, "Result": [{"Book": "测试书"}]}),
+    ):
+        books_found = expert.query_api_books("测试书")
+    if books_found["status"] == QUERY_STATUS_FOUND:
+        print("✓ API 有结果返回 found")
+    else:
+        print(f"✗ API 有结果状态错误: {books_found}")
+        ok = False
+
+    statuses = {
+        dictionary_miss["status"],
+        dictionary_error["status"],
+        people_miss["status"],
+        books_error["status"],
+        books_found["status"],
+    }
+    if statuses == {QUERY_STATUS_FOUND, QUERY_STATUS_NOT_FOUND, QUERY_STATUS_ERROR}:
+        print("✓ found / not_found / error 三种状态保持分离")
+    else:
+        print(f"✗ 查询状态集合不完整: {statuses}")
+        ok = False
+
+    return ok
+
+
 def main() -> int:
     os.chdir(ROOT)
     print("=" * 60)
@@ -1299,6 +1419,7 @@ def main() -> int:
         ("古地名映射", test_place_resolver),
         ("左图右史链接", test_history_map_link),
         ("现代地点反查历史区划", test_place_admin_resolver),
+        ("查询结果状态区分", test_query_result_statuses),
         ("识典链接", test_shidian_link),
     ]
 
