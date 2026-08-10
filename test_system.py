@@ -158,6 +158,8 @@ def test_workflow_guardrails() -> bool:
             "清单 C：被引史料说明",
             'venv/bin/mdict -q "史料书名"',
             "每部被引用史料",
+            "同名异地防护",
+            "通行地理常识，非本系统辞典/TGAZ 核验结果",
         ],
         "README.md": [
             "译文只翻译原文",
@@ -185,6 +187,8 @@ def test_workflow_guardrails() -> bool:
             "每部被引用史料都要有简介",
             "单一真理源",
             "install_codex.py",
+            "同名异地防护",
+            "通行地理常识，非本系统辞典/TGAZ 核验结果",
         ],
         "CLAUDE.md": [
             "单一真理源",
@@ -227,6 +231,9 @@ def test_workflow_guardrails() -> bool:
             "错误示例17",
             "search_link_generated",
             "无结果或查询失败当作矛盾",
+            "错误示例18",
+            "同名异地",
+            "通行地理常识，非本系统辞典/TGAZ 核验结果",
         ],
         ".claude/commands/history.md": [
             "scripts/run_in_venv.py",
