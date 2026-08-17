@@ -291,14 +291,11 @@ def build_candidate_text(page: dict[str, Any]) -> str:
 def score_candidate(book: str, volume: str, text: str, book_id: str | None = None) -> int:
     score = 0
     length = len(text)
-    if 35 <= length <= 300:
+    # ponytail: 1000-char ceiling matches SKILL policy ("1000 字以内都可接受").
+    if 35 <= length <= 1000:
         score += 3
     elif 20 <= length < 35:
         score += 2
-    elif 301 <= length <= 700:
-        score += 2
-    elif 701 <= length <= 1000:
-        score += 1
     elif 1001 <= length <= 1200:
         score -= 2
     else:
