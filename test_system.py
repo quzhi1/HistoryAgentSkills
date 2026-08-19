@@ -251,7 +251,7 @@ def test_workflow_guardrails() -> bool:
             "随机历史小段子",
             "不输出识典",
             "不输出左图右史",
-            "出处可信度评价",
+            "出处考证",
             "不另写“好玩处”",
             "不使用固定段子池",
             "scripts/random_anecdote_seed.py",
