@@ -59,3 +59,9 @@ query_results/
 # Claude Code 本机权限白名单（不进版本库）
 .claude/settings.local.json
 .codex/
+
+# 卡片渲染产物
+outputs/
+
+# CodeGraph 本机索引
+.codegraph/
