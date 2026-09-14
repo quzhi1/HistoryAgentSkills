@@ -6,7 +6,7 @@
 
 - 回答中国历史问题、修改 workflow、更新模板或调整红线时，先读并遵守 `SKILL.md`。
 - 呼叫随机历史小段子 skill 时，读并遵守 `random-history-anecdote/SKILL.md`；它继承 `SKILL.md` 的证据底线，但明确不输出识典链接和左图右史地图链接。
-- 把段子排成小红书轮播图时，读并遵守 [`xiaohongshu-cards/SKILL.md`](xiaohongshu-cards/SKILL.md)；它只做排版，不新增史料、不生成 meme 卡、不擅自配图。
+- 把段子排成小红书轮播图时，读并遵守 [`xiaohongshu-cards/SKILL.md`](xiaohongshu-cards/SKILL.md)；它只做排版，不新增史料、不擅自配图。
 - `AGENTS.md` 与 `CLAUDE.md` 只保留入口规则，不复制长流程。
 - 如果本文件与 `SKILL.md` 冲突，以 `SKILL.md` 为准，并修正本文件。
 
