@@ -160,6 +160,8 @@ def test_workflow_guardrails() -> bool:
             "每部被引用史料",
             "同名异地防护",
             "通行地理常识，非本系统辞典/TGAZ 核验结果",
+            "能不用四库本就不用四库本",
+            "_WYG_",
         ],
         "README.md": [
             "译文只翻译原文",
@@ -187,6 +189,7 @@ def test_workflow_guardrails() -> bool:
             "每部被引用史料都要有简介",
             "单一真理源",
             "install_codex.py",
+            "能不用四库本就不用四库本",
             "同名异地防护",
             "通行地理常识，非本系统辞典/TGAZ 核验结果",
         ],
@@ -234,6 +237,7 @@ def test_workflow_guardrails() -> bool:
             "错误示例18",
             "同名异地",
             "通行地理常识，非本系统辞典/TGAZ 核验结果",
+            "错误示例22",
         ],
         ".claude/commands/history.md": [
             "scripts/run_in_venv.py",
@@ -260,6 +264,7 @@ def test_workflow_guardrails() -> bool:
             "scripts/place_resolver.py",
             "译文只翻译原文",
             "查不到可靠原文",
+            "能不用四库本就不用四库本",
         ],
     }
     ok = True
