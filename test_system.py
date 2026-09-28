@@ -265,6 +265,7 @@ def test_workflow_guardrails() -> bool:
             "译文只翻译原文",
             "查不到可靠原文",
             "能不用四库本就不用四库本",
+            "原文必须带标点",
         ],
     }
     ok = True
