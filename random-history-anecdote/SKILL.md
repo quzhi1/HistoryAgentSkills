@@ -85,6 +85,16 @@ venv/bin/python scripts/random_anecdote_seed.py --attempts 15 --candidates 8 --j
    venv/bin/python scripts/random_anecdote_seed.py --attempts 20 --candidates 12 --json
    ```
 
+   **查重**：脚本只按页码和片段开头去重，同一个故事换个版本、换个切入段落就会漏网；
+   `outputs/anecdote_seen.json` 记的是所有出过的候选（含本次），命中不代表发过，不能拿来查重。
+   选定后拿主角称呼和故事里一句有辨识度的 4–6 字原文，查已发布清单和卡片文字，命中就换候选：
+
+   ```bash
+   grep -rn -e "<主角称呼>" -e "<原文短句>" outputs/anecdote_published.txt outputs/xhs --include="*.txt" --include="*.json"
+   ```
+
+   交付段子后，往 `outputs/anecdote_published.txt` 追加一行：`日期 | 标题 | 主角称呼 | 书名卷篇 | 原文开头一句`。
+
    选定后用候选 `keyword` 或原文中的短句再次查询 cnkgraph，**把故事的头尾都补齐**——
    随机脚本返回的往往是中间一段，缺了起因或结局就不成故事。
 
