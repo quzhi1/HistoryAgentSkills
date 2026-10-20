@@ -257,6 +257,7 @@ def test_workflow_guardrails() -> bool:
             "不输出左图右史",
             "出处考证",
             "**背景**默认每则都写",
+            "大事件的切片要补前因后果",
             "不另写“好玩处”",
             "不使用固定段子池",
             "scripts/random_anecdote_seed.py",
